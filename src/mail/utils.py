@@ -1,4 +1,4 @@
-from ..handlers.register_handler import user_sessions
+from handlers.register_handler import user_sessions
 
 
 user_domain = user_sessions.get('email').split('@')[-1].lower()
