@@ -1,10 +1,15 @@
 import asyncio
+import os
+
 from telegram.ext import Application, CommandHandler
 from src.bot.handlers import start, help
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def main():
 
-    app = Application.builder().token("8253434945:AAHDx83n9yQ7HUGSMTmnWbYbYbmA9g7HXmc").build()
+    app = Application.builder().token(os.getenv('BOT_TOKEN')).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help))
     print("Бот запущен...")
