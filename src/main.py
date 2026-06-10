@@ -10,7 +10,7 @@ async def start(update, context):
 
 def main():
 
-    app = Application.builder().token("8253434945:AAHDx83n9yQ7HUGSMTmnWbYbYbmA9g7HXmc").build()
+    app = Application.builder().token("").build()
     app.add_handler(CommandHandler("start", start))
     print("Бот запущен...")
     app.run_polling()
