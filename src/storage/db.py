@@ -7,5 +7,5 @@ class Database:
         self.cursor = self.conn.cursor()
 
     def add_user(self, email, password):
+        query = 'INSERT users (user_id, email, password, imap_server, smtp_server, smtp_port, registered, created_at) VALUES (? ? ? ? ? ? ? ?)'
         
-        self.cursor.execute('''''')
