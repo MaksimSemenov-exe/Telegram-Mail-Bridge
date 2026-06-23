@@ -6,7 +6,7 @@ class Database:
         self.conn = sqlite3.connect('mail.db')
         self.cursor = self.conn.cursor()
 
-    def add_user(self, user_id, email, password, imap_server, imap_port, smtp_server, smtp_port, registered, created):
+    def add_user(self, user_id, email, password, imap_server, imap_port, smtp_server, smtp_port, created_at):
         query = 'INSERT users (user_id, email, password, imap_server, imap_port, smtp_server, smtp_port, created_at) VALUES (? ? ? ? ? ? ? ?)'
-        self.cursor.execute(query, (user_id, email, password, imap_server, imap_port, smtp_server, smtp_port, registered, created))
+        self.cursor.execute(query, (user_id, email, password, imap_server, imap_port, smtp_server, smtp_port, created_at))
 
