@@ -15,7 +15,7 @@ class MailClient:
         except Exception:
             return 'Ошибка подключения'
 
-    def fetch(self):
+    def idle(self):
         pass
 
     def disconnect(self):

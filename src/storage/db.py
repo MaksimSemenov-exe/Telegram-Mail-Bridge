@@ -1,16 +1,39 @@
 import sqlite3
 import os
 
+
 class Database:
     def __init__(self):
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
-        self.db_path = os.path.join(self.current_dir, 'mail.db')
+        self.db_path = os.path.join(self.current_dir, "mail.db")
         self.conn = sqlite3.connect(self.db_path)
         self.cursor = self.conn.cursor()
 
-    def add_user(self, user_id, email, password, imap_server, imap_port, smtp_server, smtp_port, created_at):
-        query = 'INSERT INTO users (user_id, email, password, imap_server, imap_port, smtp_server, smtp_port, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-        self.cursor.execute(query, (user_id, email, password, imap_server, imap_port, smtp_server, smtp_port, created_at))
+    def add_user(
+        self,
+        user_id,
+        email,
+        password,
+        imap_server,
+        imap_port,
+        smtp_server,
+        smtp_port,
+        created_at,
+    ):
+        query = "INSERT INTO users (user_id, email, password, imap_server, imap_port, smtp_server, smtp_port, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        self.cursor.execute(
+            query,
+            (
+                user_id,
+                email,
+                password,
+                imap_server,
+                imap_port,
+                smtp_server,
+                smtp_port,
+                created_at,
+            ),
+        )
         self.conn.commit()
 
     def create_database(self):
