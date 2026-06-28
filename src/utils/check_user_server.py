@@ -1,4 +1,4 @@
-from imap_servers import imap_data
+from src.utils.imap_servers import imap_data
 
 def get_user_server(email: str) -> str:
 

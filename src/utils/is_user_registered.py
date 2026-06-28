@@ -14,6 +14,7 @@ def is_registered(user_id: int) -> bool:
     except Exception as e:
         print(e)
         return False
+
     finally:
         if conn is not None:
             conn.close()

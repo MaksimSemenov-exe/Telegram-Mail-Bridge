@@ -16,7 +16,7 @@ class MailClient:
             return 'Ошибка подключения'
 
     def fetch(self):
-
+        pass
 
     def disconnect(self):
         self.client.disconnect()
