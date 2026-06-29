@@ -16,8 +16,15 @@ class MailClient:
             return 'Ошибка подключения'
 
     def idle(self):
-        pass
+        client = imaplib.IMAP4_SSL(self.server)
+        client.login(self.username, self.password)
+        client.select('INBOX')
 
+        try:
+            while True:
+                responces = client.idle_check(timeout=1)
+                for i in responces:
+                    pass
     def disconnect(self):
         self.client.disconnect()
         self.client.logout()

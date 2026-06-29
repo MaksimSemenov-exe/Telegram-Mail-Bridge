@@ -1,7 +1,8 @@
 from datetime import datetime
 
 from src.storage.db import Database
-from src.utils.check_user_server import get_user_server
+from src.utils.get_user_server import get_user_server
+from src.utils.get_user_port import get_user_port
 from src.utils.imap_servers import imap_data
 from src.utils.is_user_registered import is_registered
 from telegram import Update
@@ -44,7 +45,7 @@ async def get_password(update: Update, context: CallbackContext) -> int:
         f"Регистрация завершена \n Почтовый адрес: {context.user_data[EMAIL]} \n Пароль приложения: {context.user_data[PASSWORD]}"
     )
     imap_server = get_user_server(context.user_data[EMAIL])
-    imap_port = imap_data[context.user_data[EMAIL].split("@")[1]].get("imap_port")
+    imap_port = get_user_port(context.user_data[EMAIL])
     database.add_user(
         update.message.from_user.id,
         context.user_data[EMAIL],
