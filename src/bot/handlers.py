@@ -1,9 +1,7 @@
 from datetime import datetime
-
 from src.storage.db import Database
 from src.utils.get_user_server import get_user_server
 from src.utils.get_user_port import get_user_port
-from src.utils.imap_servers import imap_data
 from src.utils.is_user_registered import is_registered
 from telegram import Update
 from telegram.ext import (

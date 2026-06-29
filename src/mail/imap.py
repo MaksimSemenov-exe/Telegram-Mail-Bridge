@@ -1,4 +1,4 @@
-import imaplib
+from imap_tools import MailBox, A
 
 
 class MailClient:
@@ -6,25 +6,21 @@ class MailClient:
         self.server = server
         self.username = username
         self.password = password
-        self.client = None
+        self.mailbox = None
 
-    def connect(self):
+    def connect(self) -> MailBox:
         try:
-            self.client = imaplib.IMAP4_SSL(self.server)
-            self.client.login(self.username, self.password)
+            self.mailbox = MailBox(self.server).login(self.username, self.password)
         except Exception:
             return 'Ошибка подключения'
 
     def idle(self):
-        client = imaplib.IMAP4_SSL(self.server)
-        client.login(self.username, self.password)
-        client.select('INBOX')
-
-        try:
-            while True:
-                responces = client.idle_check(timeout=1)
-                for i in responces:
+        with self.mailbox:
+            responses = self.mailbox.idle.wait()
+            if responses:
+                for msg in self.mailbox.fetch(A(seen=False)):
                     pass
+
     def disconnect(self):
-        self.client.disconnect()
-        self.client.logout()
+        self.mailbox.disconnect()
+        self.mailbox.logout()
