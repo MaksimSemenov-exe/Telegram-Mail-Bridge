@@ -1,4 +1,4 @@
-
+"""Словари IMAP серверов"""
 imap_data = {
     'gmail.com': {
         'server': 'imap.gmail.com',

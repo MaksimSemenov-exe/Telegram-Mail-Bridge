@@ -1,7 +1,7 @@
 import sqlite3
 
 def is_registered(user_id: int) -> bool:
-
+    """Проверка, зарегестрирован ли пользователь"""
     conn = None
     try:
         conn = sqlite3.connect(r'C:\Users\arefb\PycharmProjects\Telegram-Mail-Bridge\src\storage\mail.db')

@@ -8,6 +8,7 @@ from src.storage.db import Database
 load_dotenv(dotenv_path=r'C:\Users\arefb\PycharmProjects\Telegram-Mail-Bridge\config.env')
 
 def main():
+
     TOKEN = os.getenv("BOT_TOKEN")
     print(TOKEN)
 
