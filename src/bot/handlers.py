@@ -54,7 +54,7 @@ async def get_password(update: Update, context: CallbackContext) -> int:
         0,
         datetime.now(),
     )
-    print('Данные добавлены в БД')
+    print("Данные добавлены в БД")
     return ConversationHandler.END
 
 

@@ -9,13 +9,14 @@ class MailClient:
         self.password = password
         self.mailbox = None
         self.responses = None
+
     def connect(self) -> bool:
 
         """Подключение к почтовому серверу"""
 
         try:
             self.mailbox = MailBox(self.server).login(self.username, self.password)
-            print('Подключено')
+            print("Подключено")
             return True
 
         except Exception:
@@ -50,12 +51,13 @@ class MailClient:
             if responses:
                 messages = self.fetch_unseen()
                 for msg in messages:
-                    print(msg['subject'])
+                    print(msg["subject"])
 
     def disconnect(self):
         self.mailbox.disconnect()
         self.mailbox.logout()
 
-client = MailClient("imap.yandex.ru", "", "")
+
+client = MailClient("imap.yandex.ru", "m4xsem2009@yandex.ru", "mrcqhgcajxikoojk")
 client.connect()
 client.idle()
