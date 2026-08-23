@@ -52,3 +52,7 @@ class Database:
         """
         )
         self.conn.commit()
+
+    def get_all_users(self):
+        query = "SELECT * FROM users"
+        self.cursor.execute(query)

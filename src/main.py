@@ -1,5 +1,7 @@
 import os
-
+import threading
+from src.mail.imap import MailClient
+from src.bot.notifier import send_message_to_client
 from telegram.ext import Application, CommandHandler, Updater
 from src.bot.handlers import help, conv_handler
 from dotenv import load_dotenv
