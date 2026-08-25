@@ -38,7 +38,7 @@ class MailClient:
             )
         return messages
 
-    def idle(self):
+    def idle(self, callback=None):
 
         while True:
             if not self.mailbox:
@@ -51,7 +51,8 @@ class MailClient:
             if responses:
                 messages = self.fetch_unseen()
                 for msg in messages:
-                    print(msg["subject"])
+                    if callback:
+                        callback(msg)
 
     def disconnect(self):
         self.mailbox.disconnect()

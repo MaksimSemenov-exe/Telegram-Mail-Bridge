@@ -8,6 +8,7 @@ imap_data = {
         'is_authentication_needed': True
     },
     'yandex.ru': {
+        'server': 'imap.yandex.ru',
         'rus_server': 'imap.yandex.ru',
         'foriegn_server': 'imap.ya.ru',
         'is_ssl_needed': True,
