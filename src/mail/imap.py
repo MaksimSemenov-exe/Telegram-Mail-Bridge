@@ -59,6 +59,6 @@ class MailClient:
         self.mailbox.logout()
 
 
-client = MailClient("imap.yandex.ru", "m4xsem2009@yandex.ru", "mrcqhgcajxikoojk")
-client.connect()
-client.idle()
+# client = MailClient("imap.yandex.ru", "m4xsem2009@yandex.ru", "mrcqhgcajxikoojk")
+# client.connect()
+# client.idle()

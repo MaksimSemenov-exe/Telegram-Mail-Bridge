@@ -55,4 +55,5 @@ class Database:
 
     def get_all_users(self):
         query = "SELECT * FROM users"
-        self.cursor.execute(query)
+        data = self.cursor.execute(query).fetchall()
+        return data
