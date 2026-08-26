@@ -17,6 +17,7 @@ EMAIL, PASSWORD = range(2)
 
 
 async def start(update: Update, context: CallbackContext) -> int:
+    """Хендлер-обработчик команды /start, запускает регистрацию если пользователя нет в БД"""
     user_id = update.message.from_user.id
     print(user_id)
     if is_registered(user_id):
@@ -30,6 +31,7 @@ async def start(update: Update, context: CallbackContext) -> int:
 
 
 async def get_email(update: Update, context: CallbackContext) -> int:
+    """Хендлер обработки адреса эл.почты, отправленной пользователем проходящим регистрацию"""
     context.user_data[EMAIL] = update.message.text
     await update.message.reply_text(
         "Отлично. Введите пароль приложения для вашей почты"
@@ -38,6 +40,8 @@ async def get_email(update: Update, context: CallbackContext) -> int:
 
 
 async def get_password(update: Update, context: CallbackContext) -> int:
+    """Хендлер обработки пароля сторонних приложений эл.почты, отправленного пользователем проходящим регистрацию
+    Сохранение данных о пользователе в таблицу users в БД"""
     context.user_data[PASSWORD] = update.message.text
     await update.message.reply_text(
         f"Регистрация завершена \n Почтовый адрес: {context.user_data[EMAIL]} \n Пароль приложения: {context.user_data[PASSWORD]}"
@@ -59,17 +63,19 @@ async def get_password(update: Update, context: CallbackContext) -> int:
 
 
 async def help(update: Update, context: CallbackContext):
+    """Хендлер-обработчик команды /help (справочная информация) """
     await update.message.reply_text(
         "Этот бот создан для автоматической пересылки сообщений с почтового клиента в клиент ТГ"
     )
 
 
 async def cancel(update: Update, context: CallbackContext):
+    """Хендлер-обработчик команды /cancel (отмена регистрации) """
     await update.message.reply_text("Регистрация отменена")
     context.user_data.clear()
     return ConversationHandler.END
 
-
+"""Диалог-хендлер (Conversation-Handler) - собирает воедино все хендлеры-обработчики для создания диалога. Точка входа (entry-point) - команда /start (при условии что пользователь не зарегистрирован ранее). Точка выхода (fallback-point) - команда /cancel ИЛИ завершение регистрации"""
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler("start", start)],
     states={

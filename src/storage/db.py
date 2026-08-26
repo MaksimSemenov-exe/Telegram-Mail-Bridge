@@ -20,6 +20,7 @@ class Database:
         smtp_port,
         created_at,
     ):
+        """Добавление нового пользователя в таблицу users в БД"""
         query = "INSERT INTO users (user_id, email, password, imap_server, imap_port, smtp_server, smtp_port, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         self.cursor.execute(
             query,
@@ -37,6 +38,7 @@ class Database:
         self.conn.commit()
 
     def create_database(self):
+        """Создание таблицы users в БД"""
         self.cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS users (
@@ -54,6 +56,7 @@ class Database:
         self.conn.commit()
 
     def get_all_users(self):
+        """Получение всез записей из таблицы users в БД"""
         query = "SELECT * FROM users"
         data = self.cursor.execute(query).fetchall()
         return data

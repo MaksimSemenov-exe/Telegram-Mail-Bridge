@@ -24,7 +24,7 @@ class MailClient:
             return False
 
     def fetch_unseen(self) -> list[dict[str, str]]:
-
+        """Парсинг непрочитанных писем в почте"""
         messages = []
         for msg in self.mailbox.fetch(A(seen=False)):
             messages.append(
@@ -39,7 +39,7 @@ class MailClient:
         return messages
 
     def idle(self, callback=None):
-
+        """Работа с почтовым сервисом использую IDLE-режим с таймаутом 60 секунд"""
         while True:
             if not self.mailbox:
                 if not self.connect():
@@ -55,10 +55,7 @@ class MailClient:
                         callback(msg)
 
     def disconnect(self):
+        """Отключение от почтового сервиса"""
         self.mailbox.disconnect()
         self.mailbox.logout()
 
-
-# client = MailClient("imap.yandex.ru", "m4xsem2009@yandex.ru", "mrcqhgcajxikoojk")
-# client.connect()
-# client.idle()

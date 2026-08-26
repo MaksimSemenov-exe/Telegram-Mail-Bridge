@@ -2,7 +2,7 @@ import os
 import asyncio
 import threading
 from telegram.ext import Application, CommandHandler, Updater
-from src.bot.handlers import help, conv_handler, start
+from src.bot.handlers import help, conv_handler
 from dotenv import load_dotenv
 from src.storage.db import Database
 from src.mail.imap import MailClient
@@ -12,7 +12,7 @@ dotenv_path = os.path.join(current_dir, '..', 'config.env')
 load_dotenv(dotenv_path=dotenv_path)
 
 def main():
-
+    """Получение токена, запуск бота, """
     TOKEN = os.getenv("BOT_TOKEN")
     print(TOKEN)
 
