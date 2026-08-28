@@ -11,7 +11,7 @@ imap_data = {
         'server': 'imap.yandex.ru',
         'rus_server': 'imap.yandex.ru',
         'foriegn_server': 'imap.ya.ru',
-        'is_ssl_needed': True,
+        'is_ssl_needed': True,              #Убрать rus server
         'ssl_port': 993,
     },
     'mail.ru': {
