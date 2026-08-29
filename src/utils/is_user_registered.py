@@ -21,3 +21,4 @@ def is_registered(user_id: int) -> bool:
     finally:
         if conn is not None:
             conn.close()
+            conn = None
