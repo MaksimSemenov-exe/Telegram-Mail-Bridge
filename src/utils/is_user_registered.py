@@ -6,7 +6,7 @@ def is_registered(user_id: int) -> bool:
     conn = None
     try:
         conn = sqlite3.connect(
-            r"C:\Users\arefb\PycharmProjects\Telegram-Mail-Bridge\src\storage\mail.db"
+            r"src\storage\mail.db"
         )
         cursor = conn.cursor()
         query = "SELECT EXISTS(SELECT 1 FROM users WHERE user_id = ?)"
