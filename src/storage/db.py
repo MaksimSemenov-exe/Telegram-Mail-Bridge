@@ -53,6 +53,7 @@ class Database:
             )
         """
         )
+        self.cursor.execute("""CREATE TABLE IF NOT EXISTS last_mail (user_id INTEGER PRIMARY KEY, uid INTEGER""")
         self.conn.commit()
 
     def get_all_users(self):
