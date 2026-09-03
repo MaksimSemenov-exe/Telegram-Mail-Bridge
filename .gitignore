@@ -4,3 +4,5 @@ config.env
 mail.db
 test.py
 __pycache__/
+*.pyc
+*.pyo
