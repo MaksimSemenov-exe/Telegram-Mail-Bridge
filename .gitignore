@@ -3,3 +3,4 @@
 config.env
 mail.db
 test.py
+__pycache__/
