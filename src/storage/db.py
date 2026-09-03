@@ -5,6 +5,7 @@ import os
 class Database:
     def __init__(self):
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
+        #self.db_path = os.path.join(os.path.dirname(__file__), 'storage', 'mail.db')
         self.db_path = os.path.join(self.current_dir, "mail.db")
         self.conn = sqlite3.connect(self.db_path)
         self.cursor = self.conn.cursor()
@@ -53,8 +54,16 @@ class Database:
             )
         """
         )
-        self.cursor.execute("""CREATE TABLE IF NOT EXISTS last_mail (user_id INTEGER PRIMARY KEY, uid INTEGER""")
+        self.cursor.execute("""CREATE TABLE IF NOT EXISTS last_mail (email TEXT, uid INTEGER DEFAULT 0)""")
         self.conn.commit()
+
+    def check_last_uid(self, email):
+        query = 'SELECT uid FROM last_mail WHERE email = ?'
+        self.cursor.execute(query, (email, ))
+
+    def update_uid(self, uid, email):
+        query = 'UPDATE last_mail SET uid = ? WHERE email = ?'
+        self.cursor.execute(query, (uid, email, ))
 
     def get_all_users(self):
         """Получение всез записей из таблицы users в БД"""
