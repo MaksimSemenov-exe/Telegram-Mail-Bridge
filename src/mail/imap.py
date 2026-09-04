@@ -39,9 +39,8 @@ class MailClient:
             )
         return messages
 
-    def idle(self, email, callback=None):
-        """Работа с почтовым сервисом использую IDLE-режим с таймаутом 60 секунд"""
-        db = Database()
+    def idle(self, callback=None):
+        """Работа с почтовым сервисом используя IDLE-режим с таймаутом 60 секунд"""
         while True:
             if not self.mailbox:
                 if not self.connect():
@@ -52,6 +51,8 @@ class MailClient:
 
             if responses:
                 messages = self.fetch_unseen()
+                print(messages)
+                print("📩 Найдены письма, вызываем callback...")
                 for msg in messages:
                     if callback:
                         callback(msg)
