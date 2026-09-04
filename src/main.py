@@ -20,7 +20,7 @@ def main():
     loop = asyncio.get_event_loop()
 
 
-    if not os.path.isfile(r'src\storage\mail.db'):
+    if not os.path.isfile(r'C:\Users\arefb\PycharmProjects\Telegram-Mail-Bridge\src\storage\mail.db'):
         db.create_database()
 
     app = Application.builder().token(TOKEN).build()
@@ -40,6 +40,7 @@ def main():
 
         def handle_new_message(msg):
             text = f'От: {msg['from']}\n Тема: {msg["subject"]}\n Текст: {msg['text']}'
+            print(f"Отправка письма")
             asyncio.run_coroutine_threadsafe(app.bot.send_message(chat_id, text), loop)
 
         client.idle(handle_new_message)
