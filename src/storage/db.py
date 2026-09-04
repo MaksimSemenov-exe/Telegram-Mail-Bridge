@@ -60,10 +60,13 @@ class Database:
     def check_last_uid(self, email):
         query = 'SELECT uid FROM last_mail WHERE email = ?'
         self.cursor.execute(query, (email, ))
+        self.conn.close()
 
     def update_uid(self, uid, email):
         query = 'UPDATE last_mail SET uid = ? WHERE email = ?'
         self.cursor.execute(query, (uid, email, ))
+        self.conn.commit()
+        self.conn.close()
 
     def get_all_users(self):
         """Получение всез записей из таблицы users в БД"""
