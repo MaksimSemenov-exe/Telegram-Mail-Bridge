@@ -1,6 +1,6 @@
 import sqlite3
 import os
-
+import datetime
 
 class Database:
     def __init__(self):
@@ -22,9 +22,9 @@ class Database:
         created_at,
     ):
         """Добавление нового пользователя в таблицу users в БД"""
-        query = "INSERT INTO users (user_id, email, password, imap_server, imap_port, smtp_server, smtp_port, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        users_table_query = "INSERT INTO users (user_id, email, password, imap_server, imap_port, smtp_server, smtp_port, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         self.cursor.execute(
-            query,
+            users_table_query,
             (
                 user_id,
                 email,
@@ -36,6 +36,8 @@ class Database:
                 created_at,
             ),
         )
+        last_mail_table_query = "INSERT INTO last_mail (email, uid, last_update) VALUES (?, ?, ?)"
+        self.cursor.execute(last_mail_table_query, (email, 0, 0, ))
         self.conn.commit()
 
     def create_database(self):
@@ -54,19 +56,18 @@ class Database:
             )
         """
         )
-        self.cursor.execute("""CREATE TABLE IF NOT EXISTS last_mail (email TEXT, uid INTEGER DEFAULT 0)""")
+        self.cursor.execute("""CREATE TABLE IF NOT EXISTS last_mail (email TEXT, uid INTEGER DEFAULT 0, last_update TEXT)""")
         self.conn.commit()
 
     def check_last_uid(self, email):
         query = 'SELECT uid FROM last_mail WHERE email = ?'
         self.cursor.execute(query, (email, ))
-        self.conn.close()
 
     def update_uid(self, uid, email):
-        query = 'UPDATE last_mail SET uid = ? WHERE email = ?'
-        self.cursor.execute(query, (uid, email, ))
+        query = 'UPDATE last_mail SET uid = ?, last_update = ? WHERE email = ?'
+        last_update_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.cursor.execute(query, (uid, last_update_time, email, ))
         self.conn.commit()
-        self.conn.close()
 
     def get_all_users(self):
         """Получение всез записей из таблицы users в БД"""
