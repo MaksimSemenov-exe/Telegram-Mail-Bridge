@@ -1,5 +1,4 @@
 from imap_tools import MailBox, A
-from src.storage.db import Database
 import time
 
 
@@ -40,7 +39,9 @@ class MailClient:
         return messages
 
     def idle(self, callback=None):
+
         """Работа с почтовым сервисом используя IDLE-режим с таймаутом 60 секунд"""
+
         while True:
             if not self.mailbox:
                 if not self.connect():
@@ -52,7 +53,7 @@ class MailClient:
             if responses:
                 messages = self.fetch_unseen()
                 print(messages)
-                print("📩 Найдены письма, вызываем callback...")
+                print("Найдены письма, вызов коллбэка")
                 for msg in messages:
                     if callback:
                         callback(msg)
