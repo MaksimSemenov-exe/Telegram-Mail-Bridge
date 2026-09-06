@@ -45,6 +45,11 @@ def main():
 
         client.idle(handle_new_message)
 
+    def start_idle_for_user(user_data, loop):
+        threading.Thread(target=start_idle, args=(user_data, loop), daemon=True).start()
+
+    app.bot_data['start_idle_for_user'] = start_idle_for_user
+
     users = db.get_all_users()
     print(users)
     for user in users:

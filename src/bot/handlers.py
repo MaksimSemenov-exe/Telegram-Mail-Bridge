@@ -21,7 +21,7 @@ async def start(update: Update, context: CallbackContext) -> int:
     user_id = update.message.from_user.id
     print(user_id)
     if is_registered(user_id):
-        await update.message.reply_text("Вы уже зарегестрированы")
+        await update.message.reply_text("Вы уже зарегистрированы")
         return ConversationHandler.END
     else:
         await update.message.reply_text(
