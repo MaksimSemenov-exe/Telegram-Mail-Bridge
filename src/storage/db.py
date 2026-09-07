@@ -74,3 +74,7 @@ class Database:
         query = "SELECT * FROM users"
         data = self.cursor.execute(query).fetchall()
         return data
+
+    def get_user_info(self, user_id):
+        query = "SELECT * FROM users WHERE user_id = ?"
+        self.cursor.execute(query, (user_id, ))
