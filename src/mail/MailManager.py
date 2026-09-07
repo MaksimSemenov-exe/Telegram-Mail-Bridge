@@ -40,5 +40,6 @@ class MailManager:
             args=(server, username, password, chat_id),
             daemon=True
         ).start()
+
         self.threads.append(thread)
         print('Thread открыт')
