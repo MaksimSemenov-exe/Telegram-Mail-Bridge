@@ -18,9 +18,6 @@ def main():
     TOKEN = os.getenv("BOT_TOKEN")
     print(TOKEN)
 
-    db = Database()
-    db.create_database()
-
     loop = asyncio.get_event_loop()
 
     app = Application.builder().token(TOKEN).build()
@@ -33,7 +30,7 @@ def main():
 
     mail_manager.start_idle_for_all_users()
 
-    print("Бот запущен...")
+    print("Бот запущен")
     app.run_polling()
 
 
