@@ -59,6 +59,8 @@ async def get_password(update: Update, context: CallbackContext) -> int:
         datetime.now(),
     )
     print("Данные добавлены в БД")
+    mail_manager = context.bot_data.get('mail_manager')
+    mail_manager.start_thread_for_user(server=get_user_server(context.user_data[EMAIL]), username=context.user_data[EMAIL], password=context.user_data[PASSWORD], chat_id=update.message.from_user.id)
     return ConversationHandler.END
 
 
