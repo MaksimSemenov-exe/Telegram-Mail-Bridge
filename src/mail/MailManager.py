@@ -1,36 +1,44 @@
 import asyncio
+import threading
 from src.mail.imap import MailClient
 from src.storage.db import Database
-import threading
+
 
 class MailManager:
-    def __init__(self):
-        pass
+    def __init__(self, app, loop):
+        self.app = app
+        self.loop = loop
+        self.threads = []
+        self.db = Database()
 
-    def start_idle(self, user_data, loop, app):
-        client = MailClient(
-            server=user_data[3],
-            username=user_data[1],
-            password=user_data[2],
-        )
+    def start_idle_for_user(self, server: str, username: str, password: str, chat_id: int) -> None:
+        client = MailClient(server, username, password)
         client.connect()
-        print("CONNECTED")
-        chat_id = user_data[0]
 
         def handle_new_message(msg):
             db_local = Database()
             text = f'От: {msg['from']}\nТема: {msg["subject"]}\nТекст: {msg['text']}'
             print(f"Отправка письма")
-            asyncio.run_coroutine_threadsafe(app.bot.send_message(chat_id, text), loop)
+            asyncio.run_coroutine_threadsafe(self.app.bot.send_message(chat_id, text), self.loop)
             db_local.update_uid(msg['uid'], client.username)
 
-            client.idle(handle_new_message)
+        print('Idle открыт')
+        client.idle(handle_new_message)
 
-    def start_idle_for_user(self, user_data, start_idle):
-        client = MailClient(
-            server=user_data[3],
-            username=user_data[1],
-            password=user_data[2],
-        )
-        loop = asyncio.get_event_loop()
-        threading.Thread(target=start_idle, args=(user_data, loop), daemon=True).start()
+    def start_idle_for_all_users(self) -> None:
+
+        users = self.db.get_all_users()
+
+        for user in users:
+            thread = threading.Thread(target=self.start_idle_for_user, args=(user[3], user[1], user[2], user[0]), daemon=True
+                ).start()
+            self.threads.append(thread)
+
+    def start_thread_for_user(self, server: str, username: str, password: str, chat_id: int ) -> None:
+        thread = threading.Thread(
+            target=self.start_idle_for_user,
+            args=(server, username, password, chat_id),
+            daemon=True
+        ).start()
+        self.threads.append(thread)
+        print('Thread открыт')
