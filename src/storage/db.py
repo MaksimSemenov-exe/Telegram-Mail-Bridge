@@ -86,4 +86,7 @@ class Database:
     def delete_user(self, user_id):
         query = "DELETE FROM users WHERE user_id = ?"
         self.cursor.execute(query, (user_id, ))
-        
+
+    def stop_idle(self, user_id):
+        query = "UPDATE users SET is_active = 0 WHERE user_id = ?"
+        self.cursor.execute(query, (user_id, ))
