@@ -83,4 +83,7 @@ class Database:
         query = "SELECT is_active FROM users WHERE email = ?"
         self.cursor.execute(query, (email, ))
 
-    
+    def delete_user(self, user_id):
+        query = "DELETE FROM users WHERE user_id = ?"
+        self.cursor.execute(query, (user_id, ))
+        
