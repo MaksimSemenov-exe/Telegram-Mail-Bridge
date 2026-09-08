@@ -83,6 +83,12 @@ async def settings(update: Update, context: CallbackContext):
     user_info = db.get_user_info(update.message.from_user.id)
     await update.message.reply_text(f'Текущие настройки\nПочтовый адрес: {user_info[0][1]}\nПароль приложения: {user_info[0][2]}\nIMAP-сервер: {user_info[0][3]}\nДата регистрации аккаунта: {user_info[0][7]}')
 
+async def stop_idle(update: Update, context: CallbackContext):
+    db = Database()
+    db.stop_idle(update.message.from_user.id)
+    await update.message.reply_text('Работа бота остановлена')
+
+
 """Диалог-хендлер (Conversation-Handler) - собирает воедино все хендлеры-обработчики для создания диалога. Точка входа (entry-point) - команда /start (при условии что пользователь не зарегистрирован ранее). Точка выхода (fallback-point) - команда /cancel ИЛИ завершение регистрации"""
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler("start", start)],
