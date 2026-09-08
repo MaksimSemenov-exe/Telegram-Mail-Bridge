@@ -78,3 +78,9 @@ class Database:
     def get_user_info(self, user_id):
         query = "SELECT * FROM users WHERE user_id = ?"
         self.cursor.execute(query, (user_id, ))
+
+    def is_active(self, email):
+        query = "SELECT is_active FROM users WHERE email = ?"
+        self.cursor.execute(query, (email, ))
+
+    
