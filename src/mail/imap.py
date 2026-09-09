@@ -1,5 +1,6 @@
 from imap_tools import MailBox, A
 import time
+from src.storage.db import Database
 
 
 class MailClient:
@@ -38,11 +39,19 @@ class MailClient:
             )
         return messages
 
-    def idle(self, callback=None):
+    def idle(self, user_id, callback=None):
 
         """Работа с почтовым сервисом используя IDLE-режим с таймаутом 60 секунд"""
 
         while True:
+
+            db = Database()
+            
+            if not db.is_active(user_id):
+                print('Пользователь отключил IDLE-режим')
+                self.disconnect()
+                break
+
             if not self.mailbox:
                 if not self.connect():
                     time.sleep(5)
