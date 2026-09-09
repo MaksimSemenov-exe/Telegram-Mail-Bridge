@@ -89,4 +89,6 @@ class Database:
 
     def stop_idle(self, user_id):
         query = "UPDATE users SET is_active = 0 WHERE user_id = ?"
-        self.cursor.execute(query, (user_id, ))
+        result = self.cursor.execute(query, (user_id, )).fetchall()
+        return bool(result[0][0]) if result else False
+
