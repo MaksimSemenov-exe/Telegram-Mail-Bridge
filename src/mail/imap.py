@@ -46,7 +46,7 @@ class MailClient:
         while True:
 
             db = Database()
-            
+
             if not db.is_active(user_id):
                 print('Пользователь отключил IDLE-режим')
                 self.disconnect()
