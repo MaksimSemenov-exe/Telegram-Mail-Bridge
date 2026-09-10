@@ -88,6 +88,8 @@ async def stop_idle(update: Update, context: CallbackContext):
     db.stop_idle(update.message.from_user.id)
     await update.message.reply_text('Работа бота остановлена')
 
+async def manual_check(update: Update, context: CallbackContext):
+
 
 """Диалог-хендлер (Conversation-Handler) - собирает воедино все хендлеры-обработчики для создания диалога. Точка входа (entry-point) - команда /start (при условии что пользователь не зарегистрирован ранее). Точка выхода (fallback-point) - команда /cancel ИЛИ завершение регистрации"""
 conv_handler = ConversationHandler(
