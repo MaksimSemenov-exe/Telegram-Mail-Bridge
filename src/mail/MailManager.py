@@ -2,7 +2,7 @@ import asyncio
 import threading
 from src.mail.imap import MailClient
 from src.storage.db import Database
-
+from imap_tools import MailMessage
 
 class MailManager:
     def __init__(self, app, loop):
@@ -43,3 +43,9 @@ class MailManager:
 
         self.threads.append(thread)
         print('Thread открыт')
+
+    def message_for_manual_check(self, mails, chat_id) -> None:
+        for mail in mails:
+            text = f'От: {mail.from_}\nТема: {mail.subject}\nТекст: {mail.text}'
+            asyncio.run_coroutine_threadsafe(self.app.bot.send_message(chat_id, text), self.loop)
+
