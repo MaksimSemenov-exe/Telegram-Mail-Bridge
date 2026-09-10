@@ -1,13 +1,14 @@
 from imap_tools import MailBox, A
 import time
 from src.storage.db import Database
-
+from MailManager import MailManager
 
 class MailClient:
     def __init__(self, server: str, username: str, password: str):
         self.server = server
         self.username = username
         self.password = password
+        self.mail_manager = MailManager()
         self.mailbox = None
         self.responses = None
 
@@ -66,6 +67,10 @@ class MailClient:
                 for msg in messages:
                     if callback:
                         callback(msg)
+
+    def manual_mail_check(self):
+        db = Database()
+        unseen_mail = self.mailbox.fetch(A(seen=False))
 
     def disconnect(self):
         """Отключение от почтового сервиса"""
