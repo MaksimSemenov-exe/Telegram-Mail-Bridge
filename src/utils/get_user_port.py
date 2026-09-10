@@ -8,5 +8,3 @@ def get_user_port(email: str) -> str:
     return server
 
 
-srv = get_user_port("arefbrq@gmail.com")
-print(srv)
