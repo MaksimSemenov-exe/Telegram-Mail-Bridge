@@ -89,7 +89,10 @@ async def stop_idle(update: Update, context: CallbackContext):
     await update.message.reply_text('Работа бота остановлена')
 
 async def manual_check(update: Update, context: CallbackContext):
-    pass
+    """Хендлер-обработчик для команды /check (ручная проверка почты)"""
+    mail_manager = context.bot_data.get('mail_manager')
+    mail_manager.message_for_manual_check(server=get_user_server(context.user_data[EMAIL]), username=context.user_data[EMAIL], password=context.user_data[PASSWORD], chat_id=update.message.from_user.id)
+    await update.message.reply_text('Ручная проверка почты')
 
 """Диалог-хендлер (Conversation-Handler) - собирает воедино все хендлеры-обработчики для создания диалога. Точка входа (entry-point) - команда /start (при условии что пользователь не зарегистрирован ранее). Точка выхода (fallback-point) - команда /cancel ИЛИ завершение регистрации"""
 conv_handler = ConversationHandler(
