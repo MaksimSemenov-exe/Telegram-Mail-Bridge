@@ -4,6 +4,8 @@ from telegram.ext import Application, CommandHandler, Updater
 from src.bot.handlers import help, conv_handler
 from dotenv import load_dotenv
 from src.mail.MailManager import MailManager
+from src.utils.logger import setup_logger
+
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 dotenv_path = os.path.join(current_dir, "..", "config.env")
@@ -28,6 +30,8 @@ def main():
     app.bot_data['mail_manager'] = mail_manager
 
     mail_manager.start_idle_for_all_users()
+
+    setup_logger()
 
     print("Бот запущен")
     app.run_polling()
