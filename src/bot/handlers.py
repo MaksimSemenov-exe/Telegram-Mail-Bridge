@@ -59,40 +59,56 @@ async def get_password(update: Update, context: CallbackContext) -> int:
         datetime.now(),
     )
     print("Данные добавлены в БД")
-    mail_manager = context.bot_data.get('mail_manager')
-    mail_manager.start_thread_for_user(server=get_user_server(context.user_data[EMAIL]), username=context.user_data[EMAIL], password=context.user_data[PASSWORD], chat_id=update.message.from_user.id)
+    mail_manager = context.bot_data.get("mail_manager")
+    mail_manager.start_thread_for_user(
+        server=get_user_server(context.user_data[EMAIL]),
+        username=context.user_data[EMAIL],
+        password=context.user_data[PASSWORD],
+        chat_id=update.message.from_user.id,
+    )
     return ConversationHandler.END
 
 
 async def help(update: Update, context: CallbackContext):
-    """Хендлер-обработчик команды /help (справочная информация) """
+    """Хендлер-обработчик команды /help (справочная информация)"""
     await update.message.reply_text(
         "Этот бот создан для автоматической пересылки сообщений с почтового клиента в клиент ТГ"
     )
 
 
 async def cancel(update: Update, context: CallbackContext):
-    """Хендлер-обработчик команды /cancel (отмена регистрации) """
+    """Хендлер-обработчик команды /cancel (отмена регистрации)"""
     await update.message.reply_text("Регистрация отменена")
     context.user_data.clear()
     return ConversationHandler.END
+
 
 async def settings(update: Update, context: CallbackContext):
     """Хендлер-обработчик команды /settings для вывода текущих настроек пользователя"""
     db = Database()
     user_info = db.get_user_info(update.message.from_user.id)
-    await update.message.reply_text(f'Текущие настройки\nПочтовый адрес: {user_info[0][1]}\nПароль приложения: {user_info[0][2]}\nIMAP-сервер: {user_info[0][3]}\nДата регистрации аккаунта: {user_info[0][7]}')
+    await update.message.reply_text(
+        f"Текущие настройки\nПочтовый адрес: {user_info[0][1]}\nПароль приложения: {user_info[0][2]}\nIMAP-сервер: {user_info[0][3]}\nДата регистрации аккаунта: {user_info[0][7]}"
+    )
+
 
 async def stop_idle(update: Update, context: CallbackContext):
     db = Database()
     db.stop_idle(update.message.from_user.id)
-    await update.message.reply_text('Работа бота остановлена')
+    await update.message.reply_text("Работа бота остановлена")
+
 
 async def manual_check(update: Update, context: CallbackContext):
     """Хендлер-обработчик для команды /check (ручная проверка почты)"""
-    mail_manager = context.bot_data.get('mail_manager')
-    mail_manager.message_for_manual_check(server=get_user_server(context.user_data[EMAIL]), username=context.user_data[EMAIL], password=context.user_data[PASSWORD], chat_id=update.message.from_user.id)
-    await update.message.reply_text('Ручная проверка почты')
+    mail_manager = context.bot_data.get("mail_manager")
+    mail_manager.message_for_manual_check(
+        server=get_user_server(context.user_data[EMAIL]),
+        username=context.user_data[EMAIL],
+        password=context.user_data[PASSWORD],
+        chat_id=update.message.from_user.id,
+    )
+    await update.message.reply_text("Ручная проверка почты")
+
 
 """Диалог-хендлер (Conversation-Handler) - собирает воедино все хендлеры-обработчики для создания диалога. Точка входа (entry-point) - команда /start (при условии что пользователь не зарегистрирован ранее). Точка выхода (fallback-point) - команда /cancel ИЛИ завершение регистрации"""
 conv_handler = ConversationHandler(
@@ -103,3 +119,4 @@ conv_handler = ConversationHandler(
     },
     fallbacks=[CommandHandler("cancel", cancel)],
 )
+
