@@ -92,3 +92,7 @@ class Database:
         result = self.cursor.execute(query, (user_id, )).fetchall()
         return bool(result[0][0]) if result else False
 
+    def get_user_id_by_email(self, email):
+        query = "SELECT user_id FROM users WHERE email = ?"
+        result = self.cursor.execute(query, (email, )).fetchall()[0][0]
+        return result
