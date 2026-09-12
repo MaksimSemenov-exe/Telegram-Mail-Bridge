@@ -93,6 +93,7 @@ async def settings(update: Update, context: CallbackContext):
 
 
 async def stop_idle(update: Update, context: CallbackContext):
+    """Хендлер-обработчки команды /stop для остановки работы IDLE-режмима"""
     db = Database()
     db.stop_idle(update.message.from_user.id)
     await update.message.reply_text("Работа бота остановлена")
