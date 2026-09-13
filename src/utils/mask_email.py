@@ -1,5 +1,5 @@
 def mask_email(email):
-
+    """Маскировка email для логирования"""
     name, domain = email.split('@')
 
     if len(name) <= 2:
