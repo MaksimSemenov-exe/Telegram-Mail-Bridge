@@ -33,7 +33,7 @@ def main():
 
     setup_logger()
 
-    print("Бот запущен")
+    print('Бот запущен')
     app.run_polling()
 
 
