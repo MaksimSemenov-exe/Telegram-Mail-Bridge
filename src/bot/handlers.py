@@ -150,7 +150,7 @@ async def settings(update: Update, context: CallbackContext):
 
 async def stop_idle(update: Update, context: CallbackContext):
     """Хендлер-обработчки команды /stop для остановки работы IDLE-режмима"""
-    logger.info("Запрос остановки IDLE-режима user_id=%s", update.message.from_user.id)
+    logger.info("Запрос остановки IDLE-режима user_id=%s", update.message.from_user.id) # Добавить try/except
     db = Database()
     db.stop_idle(update.message.from_user.id)
     logger.info("IDLE остановлен user_id=%s", update.message.from_user.id)
