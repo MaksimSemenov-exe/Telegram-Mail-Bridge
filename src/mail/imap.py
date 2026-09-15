@@ -55,8 +55,8 @@ class MailClient:
         db = Database()
 
         while True:
-
-            if not db.is_active(self.user_id):
+            is_active = db.is_active(self.user_id)
+            if not is_active:
                 logger.info("Пользователь user_id=%s отключил IDLE-режим", self.user_id)
                 self.disconnect()
                 break
