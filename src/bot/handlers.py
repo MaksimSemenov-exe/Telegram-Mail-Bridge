@@ -127,9 +127,6 @@ async def settings(update: Update, context: CallbackContext):
         db = Database()
         user_info = db.get_user_info(update.message.from_user.id)
     except Exception:
-        logger.exception(
-            "Не удалось получить настройки user_id=%s", update.message.from_user.id
-        )
         await update.message.reply_text(
             "Не удалось получить настройки, попробуйте позже"
         )
@@ -152,9 +149,21 @@ async def stop_idle(update: Update, context: CallbackContext):
     """Хендлер-обработчки команды /stop для остановки работы IDLE-режмима"""
     logger.info("Запрос остановки IDLE-режима user_id=%s", update.message.from_user.id) # Добавить try/except
     db = Database()
-    db.stop_idle(update.message.from_user.id)
-    logger.info("IDLE остановлен user_id=%s", update.message.from_user.id)
-    await update.message.reply_text("Работа бота остановлена")
+    try:
+        result = db.stop_idle(update.message.from_user.id)
+    except Exception:
+        await update.message.reply_text('Не удалось остановить IDLE, попробуйте позже')
+        return
+
+    if result == 'stopped':
+        logger.info('IDLE остановлен user_id=%s', update.message.from_user.id)
+        await update.message.reply_text('Работа бота остановлена')
+    elif result == 'already_stopped':
+        logger.info('IDLE уже был остановлен user_id=%s', update.message.from_user.id)
+        await update.message.reply_text('IDLE и так не был запущен')
+    else:  # not_found
+        logger.warning('Пользователь не найден user_id=%s', update.message.from_user.id)
+        await update.message.reply_text('Вы не зарегистрированы')
 
 
 async def manual_check(update: Update, context: CallbackContext):
@@ -164,7 +173,6 @@ async def manual_check(update: Update, context: CallbackContext):
         db = Database()
         user_info = db.get_user_info(user_id)
     except Exception:
-        logger.exception('Не удалось получить данные user_id=%s', user_id)
         await update.message.reply_text('Не удалось получить данные, попробуйте позже')
         return
 
