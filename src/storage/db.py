@@ -186,6 +186,7 @@ class Database:
             raise
 
     def stop_idle(self, user_id):
+        """Смена значения в столбце is_active для остановки IDLE-режима для пользователя"""
         query = "SELECT is_active FROM users WHERE user_id = ?"
         try:
             row = self.cursor.execute(query, (user_id,)).fetchone()
