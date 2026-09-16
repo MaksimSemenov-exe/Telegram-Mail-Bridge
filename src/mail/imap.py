@@ -2,7 +2,8 @@ import time
 import logging
 from imap_tools import MailBox, A
 from src.storage.db import Database
-
+from src.utils.custom_exceptions import UserNotFound
+from src.utils.mask_email import mask_email
 
 logger = logging.getLogger(__name__)
 
@@ -12,21 +13,36 @@ class MailClient:
         self.server = server
         self.username = username
         self.password = password
-        self.user_id = Database().get_user_id_by_email(self.username)
         self.mailbox = None
         self.responses = None
+
+        try:
+            self.user_id = Database().get_user_id_by_email(self.username)
+        except UserNotFound:
+            logger.warning("Пользователь не найден user=%s", mask_email(self.username))
+            raise
+        except Exception:
+            logger.exception(
+                "Ошибка БД при получении user=%s", mask_email(self.username)
+            )
+            raise
 
     def connect(self) -> bool:
         """Подключение к почтовому серверу"""
         try:
             self.mailbox = MailBox(self.server).login(self.username, self.password)
             logger.info(
-                "Успешное подключение по IMAP для пользователя user=%s", self.username
+                "Успешное подключение по IMAP для пользователя user=%s",
+                mask_email(self.username),
             )
             return True
 
         except Exception:
-            logger.exception("Попытка подключеия по IMAP не удалась")
+            logger.exception(
+                "Не удалось подключиться к IMAp %s user=%s",
+                self.server,
+                mask_email(self.username),
+            )
             return False
 
     def fetch_unseen(self) -> list[dict[str, str]]:
@@ -44,7 +60,9 @@ class MailClient:
                     }
                 )
         except Exception:
-            logger.exception("Не удалось получить непрочитанные письма")
+            logger.exception(
+                "Не удалось получить письма user=%s", mask_email(self.username)
+            )
         return messages
 
     def idle(self, callback=None):
@@ -55,7 +73,16 @@ class MailClient:
         db = Database()
 
         while True:
-            is_active = db.is_active(self.user_id)
+            try:
+                is_active = db.is_active(self.user_id)
+            except Exception:
+                logger.exception(
+                    "Ошибка проверки is_active user_id=%s, повтор через 5 секунд",
+                    self.user_id,
+                )
+                time.sleep(5)
+                continue
+
             if not is_active:
                 logger.info("Пользователь user_id=%s отключил IDLE-режим", self.user_id)
                 self.disconnect()
@@ -63,20 +90,28 @@ class MailClient:
 
             if not self.mailbox:
                 logger.info(
-                    "Нет активного соединения с IMAP-сервером (user_id=%s), попытка подключения ",
+                    "Нет активного соединения с IMAP %s user_id=%s, попытка подключения",
+                    self.server,
                     self.user_id,
                 )
                 if not self.connect():
-                    logger.info(
-                        "Подключение к IMAP-серверу %s не удалось, повтор через 5 секунд (user_id=%s)",
-                        self.server,
+                    logger.warning(
+                        "Повтор подключения через 5 с user_id=%s",
                         self.user_id,
                     )
                     time.sleep(5)
                     continue
+            try:
+                responses = self.mailbox.idle.wait(timeout=60)
+            except Exception:
+                logger.exception(
+                    "Ошибка в IDLE, сбрасываю соединение user_id=%s", self.user_id
+                )
+                self.mailbox = None
+                time.sleep(5)
+                continue
 
-            responses = self.mailbox.idle.wait(timeout=60)
-            print(responses)
+            logger.debug("IDLE wait вернул: %r user_id=%s", responses, self.user_id)
 
             if responses:
                 logger.info("Получены непрочитанные письма (user_id=%s)", self.user_id)
@@ -89,12 +124,22 @@ class MailClient:
                 print("Найдены письма, вызов коллбэка")
                 for msg in messages:
                     if callback:
-                        callback(msg)
+                        try:
+                            callback(msg)
+                        except Exception:
+                            logger.exception(
+                                "Ошибка в callback UID=%s, user_id=%s",
+                                msg["uid"],
+                                self.user_id,
+                            )
             else:
                 logger.debug("IDLE: таймаут, событий нет (user_id=%s)", self.user_id)
 
     def disconnect(self):
         """Отключение от почтового сервиса"""
+        if not self.mailbox:
+            return
+
         try:
             self.mailbox.disconnect()
             self.mailbox.logout()
@@ -107,3 +152,5 @@ class MailClient:
                 self.server,
                 self.user_id,
             )
+        finally:
+            self.mailbox = None
