@@ -68,7 +68,7 @@ class MailManager:
             logger.info("IDLE завершен для user=%s", mask_email(username))
 
     def start_idle_for_all_users(self) -> None:
-
+        """Запускает IDLE-поток для каждого пользователя"""
         users = self.db.get_all_users()
         logger.info("Запуск IDLE-режима для %s пользователей", len(users))
 
