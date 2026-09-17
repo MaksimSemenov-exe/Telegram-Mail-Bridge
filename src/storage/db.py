@@ -79,7 +79,7 @@ class Database:
                     smtp_server TEXT,
                     smtp_port INTEGER,
                     created_at TEXT,
-                    is_active INTEGER DEFAULT 0
+                    is_active INTEGER DEFAULT 1
                 )
             """
             )
@@ -223,3 +223,14 @@ class Database:
             logger.warning("Пользователь не найден email=%s", mask_email(email))
             raise UserNotFound(f"email={mask_email(email)}")
         return result[0]
+
+    def set_active(self, user_id, value):
+        query = 'UPDATE users SET is_active = ? WHERE user_id = ?'
+        try:
+            cursor = self.cursor.execute(query, (value, user_id))
+            self.conn.commit()
+        except sqlite3.Error:
+            logger.exception('Не удалось обновить is_active user_id=%s', user_id)
+            self.conn.rollback()
+            raise
+        return cursor.rowcount > 0
