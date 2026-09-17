@@ -141,7 +141,6 @@ class MailClient:
             return
 
         try:
-            self.mailbox.disconnect()
             self.mailbox.logout()
             logger.info(
                 "Соединение с IMAP %s закрыто (user_id=%s)", self.server, self.user_id
