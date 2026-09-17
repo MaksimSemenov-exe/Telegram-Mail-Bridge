@@ -138,15 +138,15 @@ async def settings(update: Update, context: CallbackContext):
         return
     await update.message.reply_text(
         f"Текущие настройки\n"
-        f"Почтовый адрес: {user_info[0][1]}\n"
-        f"Пароль приложения: {user_info[0][2]}\n"
-        f"IMAP-сервер: {user_info[0][3]}\n"
-        f"Дата регистрации аккаунта: {user_info[0][7]}"
+        f"Почтовый адрес: {user_info[1]}\n"
+        f"Пароль приложения: {user_info[2]}\n"
+        f"IMAP-сервер: {user_info[3]}\n"
+        f"Дата регистрации аккаунта: {user_info[7]}"
     )
 
 
 async def stop_idle(update: Update, context: CallbackContext):
-    """Хендлер-обработчки команды /stop для остановки работы IDLE-режмима"""
+    """Хендлер-обработчки команды /stop_idle для остановки работы IDLE-режмима"""
     logger.info("Запрос остановки IDLE-режима user_id=%s", update.message.from_user.id) # Добавить try/except
     db = Database()
     try:
@@ -198,6 +198,42 @@ async def manual_check(update: Update, context: CallbackContext):
     logger.info('Ручная проверка запущена для user_id=%s', user_id)
     await update.message.reply_text("Ручная проверка почты")
 
+async def start_idle(update: Update, context: CallbackContext):
+    logger.info('Запрос возобновления IDLE-режима user_id=%s', update.message.from_user.id)
+    try:
+        db = Database()
+        user_info = db.get_user_info(update.message.from_user.id)
+    except Exception:
+        logger.exception('Не удалось получить данные user_id=%s, update.message.from_user.id')
+        await update.message.reply_text('Не удалось получить данные, попробуйте позже')
+        return
+
+    if not user_info:
+        logger.warning('Пользователь не найден user_id=%s, update.message.from_user.id')
+        await update.message.reply_text('Вы не зарегистрированы')
+        return
+
+    mail_manager = context.bot_data.get("mail_manager")
+    if not mail_manager:
+        logger.error('mail_manager не найден в bot_data user_id=%s", user_id')
+        await update.message.reply_text('Сервис временно недоступен, попробуйте позже')
+        return
+
+    try:
+        mail_manager.start_thread_for_user(
+            server=user_info[3],
+            username=user_info[1],
+            password=user_info[2],
+            chat_id=update.message.from_user.id,
+        )
+        logger.info("IDLE возобновлён user_id=%s", update.message.from_user.id)
+
+    except Exception:
+        logger.exception("Не удалось возобновить IDLE user_id=%s", update.message.from_user.id)
+        await update.message.reply_text("Не удалось возобновить IDLE, попробуйте позже")
+        return
+    db.set_active(update.message.from_user.id, 1)
+    await update.message.reply_text("IDLE-режим возобновлён")
 
 """Диалог-хендлер (Conversation-Handler) - собирает воедино все хендлеры
     -обработчики для создания диалога. Точка входа (entry-point) - команда
