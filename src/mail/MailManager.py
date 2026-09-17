@@ -20,7 +20,8 @@ class MailManager:
         self, server: str, username: str, password: str, chat_id: int
     ) -> None:
         try:
-            user_id = self.db.get_user_id_by_email(username)
+            db = Database()
+            user_id = db.get_user_id_by_email(username)
         except UserNotFound:
             logger.warning(
                 "IDLE не запущен: Пользователь не найден user=%s", mask_email(username)
