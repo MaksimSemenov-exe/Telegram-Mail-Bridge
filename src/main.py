@@ -1,7 +1,7 @@
 import os
 import asyncio
 from telegram.ext import Application, CommandHandler, Updater
-from src.bot.handlers import help, conv_handler
+from src.bot.handlers import help, conv_handler, settings, stop_idle, manual_check, cancel, start_idle
 from src.storage.db import Database
 from dotenv import load_dotenv
 from src.mail.MailManager import MailManager
@@ -39,8 +39,14 @@ def main():
     loop = asyncio.get_event_loop()
 
     app = Application.builder().token(TOKEN).build()
+
     app.add_handler(conv_handler)
-    app.add_handler(CommandHandler("help", help))
+    app.add_handler(CommandHandler('help', help))
+    app.add_handler(CommandHandler('settings', settings))
+    app.add_handler(CommandHandler('stop_idle', stop_idle))
+    app.add_handler(CommandHandler('check', manual_check))
+    app.add_handler(CommandHandler('cancel', cancel))
+    app.add_handler(CommandHandler('start_idle', start_idle))
 
     mail_manager = MailManager(app, loop)
 
@@ -48,7 +54,7 @@ def main():
 
     mail_manager.start_idle_for_all_users()
 
-    print('Бот запущен')
+    logger.debug('Бот запущен')
     app.run_polling()
 
 
