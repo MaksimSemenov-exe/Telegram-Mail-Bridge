@@ -3,7 +3,7 @@ import logging
 
 def setup_logger():
 
-    file_handler = logging.FileHandler("src/logs/bot.log", encoding="utf-8")
+    file_handler = logging.FileHandler("logs/bot.log", encoding="utf-8")
     file_handler.setLevel(logging.INFO)
 
     stream_handler = logging.StreamHandler()
