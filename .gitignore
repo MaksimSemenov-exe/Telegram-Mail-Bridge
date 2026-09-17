@@ -6,4 +6,4 @@ test.py
 __pycache__/
 *.pyc
 *.pyo
-.logs/
+bot.log
