@@ -179,7 +179,6 @@ class Database:
         try:
             self.cursor.execute(query, (user_id,))
             self.conn.commit()
-            logger.info("user_id=%s удален", user_id)
         except sqlite3.Error:
             logger.exception("Не удалось удалить user_id=%s", user_id)
             self.conn.rollback()
@@ -234,3 +233,16 @@ class Database:
             self.conn.rollback()
             raise
         return cursor.rowcount > 0
+
+    def is_registered(self, user_id):
+        query = 'SELECT EXISTS(SELECT 1 FROM users WHERE user_id = ?)'
+        try:
+            row = self.cursor.execute(query, (user_id,)).fetchone()
+        except sqlite3.Error:
+            logger.exception('Не удалось проверить существование user_id=%s', user_id)
+            raise
+
+        if row is None:
+            return False
+
+        return bool(row[0])
