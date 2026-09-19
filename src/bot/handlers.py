@@ -26,7 +26,9 @@ async def start(update: Update, context: CallbackContext) -> int:
     user_id = update.message.from_user.id
     logger.info("Команда /start от user_id=%s", user_id)
 
-    if is_registered(user_id):
+    db = Database()
+
+    if db.is_registered(user_id):
         await update.message.reply_text("Вы уже зарегистрированы")
         logger.info("user_id=%s уже зарегистрирован", user_id)
         return ConversationHandler.END
@@ -234,6 +236,18 @@ async def start_idle(update: Update, context: CallbackContext):
         return
     db.set_active(update.message.from_user.id, 1)
     await update.message.reply_text("IDLE-режим возобновлён")
+
+async def delete_user(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+    try:
+        db = Database()
+        db.delete_user(user_id)
+        logger.info('Пользователь user_id=%s удален', user_id)
+    except Exception:
+        await update.message.reply_text('Не удалось удалить аккаунт, попробуйте позже')
+
+    await update.message.reply_text('Аккаунт удален')
+
 
 """Диалог-хендлер (Conversation-Handler) - собирает воедино все хендлеры
     -обработчики для создания диалога. Точка входа (entry-point) - команда
