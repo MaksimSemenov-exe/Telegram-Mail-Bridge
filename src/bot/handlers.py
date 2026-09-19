@@ -201,6 +201,7 @@ async def manual_check(update: Update, context: CallbackContext):
     await update.message.reply_text("Ручная проверка почты")
 
 async def start_idle(update: Update, context: CallbackContext):
+    """Хендлер-обработчик команды /start_idle. Ручной запуск IDLE-режима для пользователя если он был отключен"""
     logger.info('Запрос возобновления IDLE-режима user_id=%s', update.message.from_user.id)
     try:
         db = Database()
@@ -238,6 +239,7 @@ async def start_idle(update: Update, context: CallbackContext):
     await update.message.reply_text("IDLE-режим возобновлён")
 
 async def delete_user(update: Update, context: CallbackContext):
+    """Хендлер-обработчик команды /delete для удаления профиля пользователя"""
     user_id = update.message.from_user.id
     try:
         db = Database()
