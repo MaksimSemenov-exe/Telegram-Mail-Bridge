@@ -1,6 +1,7 @@
 import asyncio
 import threading
 import logging
+import os
 from src.mail.imap import MailClient
 from src.storage.db import Database
 from src.utils.custom_exceptions import UserNotFound
@@ -43,10 +44,37 @@ class MailManager:
                 user_id,
             )
             logger.debug("Отправка письма в Telegram user_id=%s", user_id)
-            text = f'От: {msg['from']}\nТема: {msg["subject"]}\nТекст: {msg['text']}'
-            asyncio.run_coroutine_threadsafe(
-                self.app.bot.send_message(chat_id, text), self.loop
-            )
+            if len(msg['attachments']) > 0:
+                logger.info('Получено письмо с %d вложениями', len(msg['attachments']))
+                text = f'От: {msg['from']}\nТема: {msg["subject"]}\nТекст: {msg['text']}\nВложения будут отправлены ниже'
+                asyncio.run_coroutine_threadsafe(
+                    self.app.bot.send_message(chat_id, text), loop=self.loop
+                )
+
+                for att in msg['attachments']:
+                    logger.debug('Обрабатываю вложение filename=%s, user_id=%s', att['filename'], user_id)
+                    try:
+                        with open(f'temp/{msg['uid']}_{att['filename']}', "wb") as f:
+                            f.write(att['payload'])
+                            logger.debug('Вложение filename=%s сохранено', att['filename'])
+                    except Exception:
+                        logger.exception('Ошибка записи вложения filename=%s, user_id=%s', att['filename'], user_id)
+                        continue
+                    asyncio.run_coroutine_threadsafe(
+                        self.app.bot.send_document(chat_id, document=f'temp/{msg['uid']}_{att['filename']}'), self.loop
+                    )
+                    logger.debug('Вложение filename=%s отправлено', att['filename'])
+
+                    try:
+                        os.remove(f'src/temp/{msg["uid"]}_{att.filename}')
+                    except Exception:
+                        logger.info('Ошибка при удалении filename=%s', att['filename'])
+
+            else:
+                text = f'От: {msg['from']}\nТема: {msg["subject"]}\nТекст: {msg['text']}'
+                asyncio.run_coroutine_threadsafe(
+                    self.app.bot.send_message(chat_id, text), self.loop
+                )
             try:
                 db_local.update_uid(msg["uid"], username)
                 logger.debug("Uid пользователя %s обновлен на %s", user_id, msg["uid"])
