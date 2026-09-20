@@ -58,8 +58,8 @@ class MailManager:
                         user_id,
                     )
                     try:
-                        # with open(f'temp/{msg['uid']}_{att['filename']}', "wb") as f:
-                        f.write(att["payload"])
+                        with open(f'temp/{msg['uid']}_{att['filename']}', "wb") as f:
+                            f.write(att["payload"])
                         logger.debug("Вложение filename=%s сохранено", att["filename"])
                     except Exception:
                         logger.exception(
