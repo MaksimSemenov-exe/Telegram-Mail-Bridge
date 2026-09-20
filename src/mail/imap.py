@@ -50,6 +50,9 @@ class MailClient:
         messages = []
         try:
             for msg in self.mailbox.fetch(A(seen=False)):
+                attachments = []
+                for att in msg.attachments:
+                    attachments.append({'filename': att.filename, 'payload': att.payload})
                 messages.append(
                     {
                         "uid": msg.uid,
@@ -57,6 +60,7 @@ class MailClient:
                         "subject": msg.subject,
                         "from": msg.from_,
                         "text": msg.text,
+                        'attachments': attachments
                     }
                 )
         except Exception:
