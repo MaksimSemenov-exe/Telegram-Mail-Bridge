@@ -2,6 +2,8 @@ import asyncio
 import threading
 import logging
 import os
+import time
+
 from src.mail.imap import MailClient
 from src.storage.db import Database
 from src.utils.custom_exceptions import UserNotFound
@@ -184,6 +186,7 @@ class MailManager:
 
         db_local = Database()
         processed = 0
+        time.sleep(5)
         for msg in messages:
             text = f'От: {msg['from']}\nТема: {msg['subject']}\nТекст: {msg['text']}'
             try:
