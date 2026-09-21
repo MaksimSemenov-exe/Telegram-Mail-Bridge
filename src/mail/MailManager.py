@@ -68,11 +68,16 @@ class MailManager:
                             user_id,
                         )
                         continue
-                    asyncio.run_coroutine_threadsafe(
-                        self.app.bot.send_document(chat_id, document=f'temp/{msg['uid']}_{att['filename']}'), self.loop
-                    )
-                    logger.debug("Вложение filename=%s отправлено", att["filename"])
-
+                    if os.path.getsize(f'temp/{msg["uid"]}_{att["filename"]}') <= 49.5:
+                        asyncio.run_coroutine_threadsafe(
+                            self.app.bot.send_document(chat_id, document=f'temp/{msg['uid']}_{att['filename']}'), self.loop
+                        )
+                        logger.debug("Вложение filename=%s отправлено", att["filename"])
+                    else:
+                        asyncio.run_coroutine_threadsafe(
+                            self.app.bot.send_message(chat_id, 'Не удалось отправить вложение. Его вес превыешает 50 МБ'), loop=self.loop
+                        )
+                        logger.info('Не удалось отправить filename=%s, вес превышет 50 МБ', att["filename"])
                     try:
                         os.remove(f'src/temp/{msg["uid"]}_{att.filename}')
                     except Exception:
