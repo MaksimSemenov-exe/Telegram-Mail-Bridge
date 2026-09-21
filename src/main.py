@@ -56,6 +56,7 @@ def main():
     mail_manager.start_idle_for_all_users()
 
     logger.debug('Бот запущен')
+    print('Бот запущен')
     app.run_polling()
 
 
