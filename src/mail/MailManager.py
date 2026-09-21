@@ -186,7 +186,7 @@ class MailManager:
 
         db_local = Database()
         processed = 0
-        time.sleep(5)
+
         for msg in messages:
             text = f'От: {msg['from']}\nТема: {msg['subject']}\nТекст: {msg['text']}'
             try:
