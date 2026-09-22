@@ -4,6 +4,7 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Status](https://img.shields.io/badge/status-active-brightgreen)
 ![Last Commit](https://img.shields.io/github/last-commit/MaksimSemenov-exe/Telegram-Mail-Bridge)
+![Platform](https://img.shields.io/badge/platform-Windows-blue)
 
 **Telegram Mail Bridge** пересылает письма с вашей почты прямо в Telegram. Подключите свой ящик - и получайте уведомления о новых письмах мгновенно, включая вложения.
 
