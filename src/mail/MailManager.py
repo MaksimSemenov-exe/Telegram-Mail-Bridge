@@ -36,7 +36,7 @@ class MailManager:
 
         logger.info("Запуск IDLE-режима для пользователя user_id=%s", user_id)
 
-        def handle_new_message(msg):
+        def handle_new_message(msg: dict) -> None:
             db_local = Database()
             logger.info(
                 "Новое письмо uid=%s, from=%s, user=%s (user_id=%s)",
