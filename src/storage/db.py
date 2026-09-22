@@ -149,6 +149,7 @@ class Database:
         return data
 
     def get_user_info(self, user_id):
+        """Получение полной информации по определенному пользователю из таблицы users"""
         query = "SELECT * FROM users WHERE user_id = ?"
         try:
             settings = self.cursor.execute(query, (user_id,)).fetchone()
@@ -185,7 +186,7 @@ class Database:
             raise
 
     def stop_idle(self, user_id):
-        """Смена значения в столбце is_active для остановки IDLE-режима для пользователя"""
+        """Смена значения в столбце is_active в таблицу users для остановки IDLE-режима для пользователя"""
         query = "SELECT is_active FROM users WHERE user_id = ?"
         try:
             row = self.cursor.execute(query, (user_id,)).fetchone()
@@ -211,6 +212,7 @@ class Database:
         return "stopped"
 
     def get_user_id_by_email(self, email):
+        """Получение значения поля user_id по значению поля email пользователя в таблице users"""
         query = "SELECT user_id FROM users WHERE email = ?"
         try:
             result = self.cursor.execute(query, (email,)).fetchone()
@@ -236,6 +238,7 @@ class Database:
         return cursor.rowcount > 0
 
     def is_registered(self, user_id):
+        """Проверка на то, зарегистрирован ли пользователь. Осуществляется через поиск user_id в таблице users"""
         query = 'SELECT EXISTS(SELECT 1 FROM users WHERE user_id = ?)'
         try:
             row = self.cursor.execute(query, (user_id,)).fetchone()
