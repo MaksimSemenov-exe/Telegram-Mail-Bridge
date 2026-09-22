@@ -224,6 +224,7 @@ class Database:
         return result[0]
 
     def set_active(self, user_id, value):
+        """Изменение статуса активности IDLE-режима для пользователя. Реализовано через столбец is_active"""
         query = 'UPDATE users SET is_active = ? WHERE user_id = ?'
         try:
             cursor = self.cursor.execute(query, (value, user_id))
