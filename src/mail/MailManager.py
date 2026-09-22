@@ -2,8 +2,6 @@ import asyncio
 import threading
 import logging
 import os
-import time
-
 from src.mail.imap import MailClient
 from src.storage.db import Database
 from src.utils.custom_exceptions import UserNotFound
