@@ -212,7 +212,7 @@ class Database:
         return "stopped"
 
     def get_user_id_by_email(self, email: str) -> int:
-        """Получение значения поля user_id по значению поля email пользователя в таблице users"""
+        """Получение значения поля user_id по значению поля email пользователя в таблице users. Если не удалось найти - UserNotFound"""
         query = "SELECT user_id FROM users WHERE email = ?"
         try:
             result = self.cursor.execute(query, (email,)).fetchone()
