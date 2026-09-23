@@ -125,7 +125,6 @@ class MailClient:
                     len(messages),
                     self.user_id,
                 )
-                print("Найдены письма, вызов коллбэка")
                 for msg in messages:
                     if callback:
                         try:
