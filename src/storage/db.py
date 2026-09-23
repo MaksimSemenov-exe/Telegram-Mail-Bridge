@@ -19,15 +19,15 @@ class Database:
 
     def add_user(
         self,
-        user_id,
-        email,
-        password,
-        imap_server,
-        imap_port,
-        smtp_server,
-        smtp_port,
-        created_at,
-    ):
+        user_id: int,
+        email: str,
+        password: str,
+        imap_server: str,
+        imap_port: int,
+        smtp_server: str,
+        smtp_port: int,
+        created_at: str,
+    ) -> None:
         """Добавление нового пользователя в таблицу users в БД"""
         users_table_query = "INSERT INTO users (user_id, email, password, imap_server, imap_port, smtp_server, smtp_port, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         try:
@@ -98,7 +98,7 @@ class Database:
         except sqlite3.Error:
             logger.exception("Ошибка при создании таблицы last_mail")
 
-    def check_last_uid(self, email):
+    def check_last_uid(self, email: str) -> int | None:
         try:
             query = "SELECT uid FROM last_mail WHERE email = ?"
             last_uid = self.cursor.execute(query, (email,)).fetchone()
@@ -115,7 +115,7 @@ class Database:
         logger.debug("last_uid=%s для email=%s", last_uid[0], mask_email(email))
         return last_uid[0]
 
-    def update_uid(self, uid, email):
+    def update_uid(self, uid: str, email: str) -> None:
         query = "UPDATE last_mail SET uid = ?, last_update = ? WHERE email = ?"
         last_update_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         try:
@@ -134,7 +134,7 @@ class Database:
             self.conn.rollback()
             raise
 
-    def get_all_users(self):
+    def get_all_users(self) -> list[tuple]:
         """Получение всех записей из таблицы users в БД"""
         query = "SELECT * FROM users"
         try:
@@ -148,7 +148,7 @@ class Database:
             logger.info("Получено пользователей: %d", len(data))
         return data
 
-    def get_user_info(self, user_id):
+    def get_user_info(self, user_id: int) -> tuple | None:
         """Получение полной информации по определенному пользователю из таблицы users"""
         query = "SELECT * FROM users WHERE user_id = ?"
         try:
@@ -163,7 +163,7 @@ class Database:
             logger.debug("Получена информация из БД о user_id=%s", user_id)
         return settings
 
-    def is_active(self, user_id):
+    def is_active(self, user_id: int) -> bool:
         query = "SELECT is_active FROM users WHERE user_id = ?"
         try:
             active_status = self.cursor.execute(query, (user_id,)).fetchone()
@@ -175,7 +175,7 @@ class Database:
             return False
         return bool(active_status[0])
 
-    def delete_user(self, user_id):
+    def delete_user(self, user_id: int) -> None:
         query = "DELETE FROM users WHERE user_id = ?"
         try:
             self.cursor.execute(query, (user_id,))
@@ -185,7 +185,7 @@ class Database:
             self.conn.rollback()
             raise
 
-    def stop_idle(self, user_id):
+    def stop_idle(self, user_id: int) -> str:
         """Смена значения в столбце is_active в таблицу users для остановки IDLE-режима для пользователя"""
         query = "SELECT is_active FROM users WHERE user_id = ?"
         try:
@@ -211,7 +211,7 @@ class Database:
         logger.info("IDLE был остановлен user_id=%s", user_id)
         return "stopped"
 
-    def get_user_id_by_email(self, email):
+    def get_user_id_by_email(self, email: str) -> int:
         """Получение значения поля user_id по значению поля email пользователя в таблице users"""
         query = "SELECT user_id FROM users WHERE email = ?"
         try:
@@ -225,7 +225,7 @@ class Database:
             raise UserNotFound(f"email={mask_email(email)}")
         return result[0]
 
-    def set_active(self, user_id, value):
+    def set_active(self, user_id: int, value: int) -> bool:
         """Изменение статуса активности IDLE-режима для пользователя. Реализовано через столбец is_active в таблице users"""
         query = 'UPDATE users SET is_active = ? WHERE user_id = ?'
         try:
@@ -237,7 +237,7 @@ class Database:
             raise
         return cursor.rowcount > 0
 
-    def is_registered(self, user_id):
+    def is_registered(self, user_id: int) -> bool:
         """Проверка на то, зарегистрирован ли пользователь. Осуществляется через поиск user_id в таблице users"""
         query = 'SELECT EXISTS(SELECT 1 FROM users WHERE user_id = ?)'
         try:
