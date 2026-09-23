@@ -14,3 +14,8 @@ def setup_logger():
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[file_handler, stream_handler],
     )
+
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
+    logging.getLogger("telegram").setLevel(logging.WARNING)
+    logging.getLogger("telegram.ext").setLevel(logging.WARNING)
