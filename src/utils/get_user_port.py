@@ -28,5 +28,3 @@ def get_user_port(email: str) -> str:
         raise ValueError(f"Нет port для домена {domain}")
 
     return port
-
-
