@@ -1,0 +1,37 @@
+{
+  "gmail.com": {
+    "server": "imap.gmail.com",
+    "is_ssl_needed": true,
+    "ssl_port": 993,
+    "tls_port": 993,
+    "is_authentication_needed": true
+  },
+  "yandex.ru": {
+    "server": "imap.yandex.ru",
+    "foriegn_server": "imap.ya.ru",
+    "is_ssl_needed": true,
+    "ssl_port": 993
+  },
+  "mail.ru": {
+    "server": "imap.mail.ru",
+    "is_ssl_needed": true,
+    "ssl_port": 993,
+    "tls_port": 993,
+    "is_authentication_needed": true
+  },
+  "outlook.com": {
+    "server": "outlook.office365.com",
+    "is_ssl_needed": true,
+    "ssl_port": 993,
+    "tls_port": 993,
+    "is_authentication_needed": true
+  },
+  "vk.com": {
+    "server": "imap.mail.ru",
+    "is_ssl_needed": true,
+    "ssl_port": 993,
+    "tls_port": 993,
+    "is_authentication_needed": true,
+    "STARTTLS": 143
+  }
+}
