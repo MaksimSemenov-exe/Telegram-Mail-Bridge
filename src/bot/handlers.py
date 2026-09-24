@@ -73,7 +73,8 @@ async def get_password(update: Update, context: CallbackContext) -> int:
             imap_port,
             "0",
             0,
-            datetime.now(),
+            str(datetime.now()),
+            "0"
         )
         logger.info(
             "Пользователь user_id=%s добавлен в БД", user_id
@@ -248,6 +249,21 @@ async def delete_user(update: Update, context: CallbackContext):
         await update.message.reply_text('Не удалось удалить аккаунт, попробуйте позже')
 
     await update.message.reply_text('Аккаунт удален')
+
+async def check_idle_status(update: Update, context: CallbackContext):
+    try:
+        db = Database()
+        activity = db.is_active(update.message.from_user.id)
+    except Exception:
+        await update.message.reply_text('Не удалось узнать статус IDLE-режима, попробуйте позже')
+        return
+
+    if activity is None:
+        await update.message.reply_text('Вы не зарегистрированы')
+        return
+
+    await update.message.reply_text('IDLE-режим {}'.format('активен' if activity else 'не активен'))
+
 
 
 """Диалог-хендлер (Conversation-Handler) - собирает воедино все хендлеры
