@@ -7,6 +7,7 @@ from src.storage.db import Database
 from src.utils.custom_exceptions import UserNotFound
 from src.utils.mask_email import mask_email
 
+
 logger = logging.getLogger(__name__)
 
 
