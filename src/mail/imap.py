@@ -65,7 +65,7 @@ class MailClient:
                 )
         except Exception:
             logger.exception(
-                "Не удалось получить письма user=%s", mask_email(self.username)
+                "Не удалось получить письма user_id=%s", mask_email(self.username)
             )
         return messages
 
@@ -73,7 +73,7 @@ class MailClient:
 
         """Работа с почтовым сервисом используя IDLE-режим с таймаутом 60 секунд"""
 
-        logger.info("Запуск IDLE-режима для пользователя user=%s", self.user_id)
+        logger.info("Запуск IDLE-режима для пользователя user_id=%s", self.user_id)
         db = Database()
 
         while True:
@@ -86,6 +86,11 @@ class MailClient:
                 )
                 time.sleep(5)
                 continue
+
+            if is_active is None:
+                logger.warning('Пользователь не найден, IDLE остановлен user_id=%s', self.user_id)
+                self.disconnect()
+                break
 
             if not is_active:
                 logger.info("Пользователь user_id=%s отключил IDLE-режим", self.user_id)
@@ -114,6 +119,11 @@ class MailClient:
                 self.mailbox = None
                 time.sleep(5)
                 continue
+
+            try:
+                db.update_last_success(self.user_id)
+            except Exception:
+                logger.debug("last_success не обновлён user_id=%s, детали в db.py", self.user_id)
 
             logger.debug("IDLE wait вернул: %r user_id=%s", responses, self.user_id)
 
