@@ -23,13 +23,14 @@ class Database:
         email: str,
         password: str,
         imap_server: str,
-        imap_port: int,
+        imap_port: str,
         smtp_server: str,
         smtp_port: int,
         created_at: str,
+        last_success: str
     ) -> None:
         """Добавление нового пользователя в таблицу users в БД"""
-        users_table_query = "INSERT INTO users (user_id, email, password, imap_server, imap_port, smtp_server, smtp_port, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        users_table_query = "INSERT INTO users (user_id, email, password, imap_server, imap_port, smtp_server, smtp_port, created_at, last_success) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
         try:
             self.cursor.execute(
                 users_table_query,
@@ -42,6 +43,7 @@ class Database:
                     smtp_server,
                     smtp_port,
                     created_at,
+                    last_success
                 ),
             )
 
@@ -80,6 +82,7 @@ class Database:
                     smtp_port INTEGER,
                     created_at TEXT,
                     is_active INTEGER DEFAULT 1
+                    last_success TEXT DEFAULT 0,
                 )
             """
             )
@@ -163,17 +166,18 @@ class Database:
             logger.debug("Получена информация из БД о user_id=%s", user_id)
         return settings
 
-    def is_active(self, user_id: int) -> bool:
+    def is_active(self, user_id: int) -> bool | None:
+        """Проверка, активен ли IDLE-режи для пользователя из таблицы users. Возвращает True/False, None если пользователь не найден"""
         query = "SELECT is_active FROM users WHERE user_id = ?"
         try:
-            active_status = self.cursor.execute(query, (user_id,)).fetchone()
+            row = self.cursor.execute(query, (user_id,)).fetchone()
         except sqlite3.Error:
             logger.exception("Не удалось проверить is_active для user_id=%s", user_id)
             raise
-        if active_status is None:
+        if row is None:
             logger.warning("Пользователь user_id=%s не найден", user_id)
-            return False
-        return bool(active_status[0])
+            return None
+        return bool(row[0])
 
     def delete_user(self, user_id: int) -> None:
         query = "DELETE FROM users WHERE user_id = ?"
@@ -250,3 +254,17 @@ class Database:
             return False
 
         return bool(row[0])
+
+    def update_last_success(self, user_id: int) -> None:
+        query = 'UPDATE users SET last_success = ? WHERE user_id = ?'
+        now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        try:
+            cursor = self.cursor.execute(query, (now, user_id))
+            self.conn.commit()
+        except sqlite3.Error:
+            logger.exception('Не удалось обновить last_success user_id=%s', user_id)
+            self.conn.rollback()
+            raise
+
+        if cursor.rowcount == 0:
+            logger.warning('last_success user_id=%s', user_id)
