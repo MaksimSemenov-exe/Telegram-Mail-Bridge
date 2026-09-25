@@ -256,6 +256,7 @@ class Database:
         return bool(row[0])
 
     def update_last_success(self, user_id: int) -> None:
+        """Обновление значения last_success для пользователя в таблице users"""
         query = 'UPDATE users SET last_success = ? WHERE user_id = ?'
         now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         try:
@@ -267,4 +268,19 @@ class Database:
             raise
 
         if cursor.rowcount == 0:
-            logger.warning('last_success user_id=%s', user_id)
+            logger.warning('last_success не обновлен user_id=%s', user_id)
+
+    def get_last_success(self, user_id: int) -> str | None:
+        """Возвращет last_success из таблицы users. Если пользователь не найден, то возвращает None"""
+        query = 'SELECT last_success FROM users WHERE user_id = ?'
+        try:
+            row = self.cursor.execute(query, (user_id,)).fetchone()
+        except sqlite3.Error:
+            logger.exception('Не удалось получить last_success user_id=%s', user_id)
+            raise
+
+        if row is None:
+            logger.warning('Пользователь user_id=%s не найден', user_id)
+            return None
+
+        return row[0]
