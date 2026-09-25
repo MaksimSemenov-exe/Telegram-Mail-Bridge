@@ -251,6 +251,7 @@ async def delete_user(update: Update, context: CallbackContext):
     await update.message.reply_text('Аккаунт удален')
 
 async def check_idle_status(update: Update, context: CallbackContext):
+
     try:
         db = Database()
         activity = db.is_active(update.message.from_user.id)
@@ -262,7 +263,35 @@ async def check_idle_status(update: Update, context: CallbackContext):
         await update.message.reply_text('Вы не зарегистрированы')
         return
 
-    await update.message.reply_text('IDLE-режим {}'.format('активен' if activity else 'не активен'))
+    if not activity:
+        await update.message.reply_text('IDLE-режим выключен')
+        return
+
+    try:
+        last_success = db.get_last_success(update.message.from_user.id)
+    except Exception:
+        await update.message.reply_text('Не удалось узнать статус, попробуйте позже')
+        return
+
+    if last_success is None:
+        await update.message.reply_text('Подождите минуту, IDLE-режим запускается')
+        return
+
+    try:
+        last_dt = datetime.strptime(last_success, '%Y-%m-%d %H:%M:%S')
+    except (ValueError, TypeError):
+        logger.exception('Неккоретный last_success для user_id=%s %s', update.message.from_user.id ,last_success)
+        await update.message.reply_text('Не удалось узнать статус, попробуйте позже')
+        return
+
+    delta = (datetime.now() - last_dt).total_seconds()
+
+    if delta < 180:
+        await update.message.reply_text('IDLE-режим активен, связь с сервером есть')
+    elif delta < 600:
+        await update.message.reply_text(f'IDLE-режим активен, но связь с сервером потеряна {int(delta // 60)} минут назад. Пытаюсь восстановить')
+    else:
+        await update.message.reply_text(f'IDLE-режим не может подключиться {int(delta // 60)} мин. Попробуйте позже или проверьте /check')
 
 
 
