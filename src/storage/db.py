@@ -179,15 +179,30 @@ class Database:
             return None
         return bool(row[0])
 
-    def delete_user(self, user_id: int) -> None:
-        query = "DELETE FROM users WHERE user_id = ?"
+    def delete_user(self, user_id: int) -> bool:
         try:
-            self.cursor.execute(query, (user_id,))
+            row = self.cursor.execute('SELECT email FROM users WHERE user_id = ?', (user_id,)).fetchone()
+        except sqlite3.Error:
+            logger.exception('Не удалось получить email user_id=%s', user_id)
+            raise
+
+        if row is None:
+            logger.warning('user_id=%s не найден для удаления', user_id)
+            return False
+
+        email = row[0]
+
+        try:
+            self.cursor.execute('DELETE FROM users WHERE user_id = ?', (user_id, ))
+            self.cursor.execute('DELETE FROM last_mail WHERE email = ?', (email, ))
             self.conn.commit()
         except sqlite3.Error:
             logger.exception("Не удалось удалить user_id=%s", user_id)
             self.conn.rollback()
             raise
+
+        logger.info('user_id=%s удален', user_id)
+        return True
 
     def stop_idle(self, user_id: int) -> str:
         """Смена значения в столбце is_active в таблицу users для остановки IDLE-режима для пользователя"""
