@@ -252,18 +252,24 @@ async def delete(update: Update, context: CallbackContext):
     return CONFIRMATION
 
 async def confirm(update: Update, context: CallbackContext):
-    confirmation = update.message.text
-    if confirmation == 'Y':
 
+    confirmation = update.message.text
+
+    if confirmation == 'Y':
         try:
             db = Database()
-            db.delete_user(update.message.from_user.id)
-            logger.info('Пользователь user_id=%s удален', update.message.from_user.id)
+            is_success = db.delete_user(update.message.from_user.id)
         except Exception:
             await update.message.reply_text('Не удалось удалить аккаунт, попробуйте позже')
             return ConversationHandler.END
 
-        await update.message.reply_text('Аккаунт удален')
+        if is_success:
+            await update.message.reply_text('Аккаунт удален')
+            logger.info('Пользователь user_id=%s удален', update.message.from_user.id)
+        else:
+            await update.message.reply_text('Вы не зарегистрированы')
+            logger.warning('Попытка удаления user_id=%s, аккаунт не зарегистрирован', update.message.from_user.id)
+
         return ConversationHandler.END
 
     else:
@@ -335,4 +341,5 @@ delete_handler = ConversationHandler(
     states={
         CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, confirm)]
     },
-    fallbacks=[CommandHandler("cancel", cancel)]),
+    fallbacks=[CommandHandler("cancel", cancel)],
+)
