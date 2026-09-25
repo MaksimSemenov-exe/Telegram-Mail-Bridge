@@ -15,7 +15,7 @@ from telegram.ext import (
 
 database = Database()
 EMAIL, PASSWORD = range(2)
-
+CONFIRMATION = range(1)
 
 logger = logging.getLogger(__name__)
 
@@ -202,24 +202,33 @@ async def manual_check(update: Update, context: CallbackContext):
 
 async def start_idle(update: Update, context: CallbackContext):
     """Хендлер-обработчик команды /start_idle. Ручной запуск IDLE-режима для пользователя если он был отключен"""
-    logger.info('Запрос возобновления IDLE-режима user_id=%s', update.message.from_user.id)
+    user_id = update.message.from_user.id
+    logger.info('Запрос возобновления IDLE-режима user_id=%s', user_id)
+
+    mail_manager = context.bot_data.get("mail_manager")
+
+    if not mail_manager:
+        logger.error('mail_manager не найден в bot_data user_id=%s', user_id)
+        await update.message.reply_text('Сервис временно недоступен, попробуйте позже')
+        return
+
     try:
         db = Database()
-        user_info = db.get_user_info(update.message.from_user.id)
+        user_info = db.get_user_info(user_id)
     except Exception:
-        logger.exception('Не удалось получить данные user_id=%s, update.message.from_user.id')
+        logger.exception('Не удалось получить данные user_id=%s', user_id)
         await update.message.reply_text('Не удалось получить данные, попробуйте позже')
         return
 
     if not user_info:
-        logger.warning('Пользователь не найден user_id=%s, update.message.from_user.id')
+        logger.warning('Пользователь не найден user_id=%s', user_id)
         await update.message.reply_text('Вы не зарегистрированы')
         return
 
-    mail_manager = context.bot_data.get("mail_manager")
-    if not mail_manager:
-        logger.error('mail_manager не найден в bot_data user_id=%s", user_id')
-        await update.message.reply_text('Сервис временно недоступен, попробуйте позже')
+    try:
+        db.set_active(user_id, 1)
+    except Exception:
+        await update.message.reply_text('Не удалось возобновить IDLE-режим. Попробуйт позже')
         return
 
     try:
@@ -227,28 +236,41 @@ async def start_idle(update: Update, context: CallbackContext):
             server=user_info[3],
             username=user_info[1],
             password=user_info[2],
-            chat_id=update.message.from_user.id,
+            chat_id=user_id,
         )
-        logger.info("IDLE возобновлён user_id=%s", update.message.from_user.id)
+        logger.info("IDLE возобновлён user_id=%s", user_id)
 
     except Exception:
-        logger.exception("Не удалось возобновить IDLE user_id=%s", update.message.from_user.id)
+        logger.exception("Не удалось возобновить IDLE user_id=%s", user_id)
         await update.message.reply_text("Не удалось возобновить IDLE, попробуйте позже")
         return
-    db.set_active(update.message.from_user.id, 1)
     await update.message.reply_text("IDLE-режим возобновлён")
 
-async def delete_user(update: Update, context: CallbackContext):
+async def delete(update: Update, context: CallbackContext):
     """Хендлер-обработчик команды /delete для удаления профиля пользователя"""
-    user_id = update.message.from_user.id
-    try:
-        db = Database()
-        db.delete_user(user_id)
-        logger.info('Пользователь user_id=%s удален', user_id)
-    except Exception:
-        await update.message.reply_text('Не удалось удалить аккаунт, попробуйте позже')
+    await update.message.reply_text('Вы уверенны что хотите удалить аккаунт навсегда? Введите Y если да, в противном случае введите N')
+    return CONFIRMATION
 
-    await update.message.reply_text('Аккаунт удален')
+async def confirm(update: Update, context: CallbackContext):
+    confirmation = update.message.text
+    if confirmation == 'Y':
+
+        try:
+            db = Database()
+            db.delete_user(update.message.from_user.id)
+            logger.info('Пользователь user_id=%s удален', update.message.from_user.id)
+        except Exception:
+            await update.message.reply_text('Не удалось удалить аккаунт, попробуйте позже')
+            return ConversationHandler.END
+
+        await update.message.reply_text('Аккаунт удален')
+        return ConversationHandler.END
+
+    else:
+        await update.message.reply_text('Аккаунт не будет удален')
+        return ConversationHandler.END
+
+
 
 async def check_idle_status(update: Update, context: CallbackContext):
 
@@ -299,7 +321,7 @@ async def check_idle_status(update: Update, context: CallbackContext):
     -обработчики для создания диалога. Точка входа (entry-point) - команда
     /start (при условии что пользователь не зарегистрирован ранее). Точка 
     выхода (fallback-point) - команда /cancel ИЛИ завершение регистрации"""
-conv_handler = ConversationHandler(
+registration_handler = ConversationHandler(
     entry_points=[CommandHandler("start", start)],
     states={
         EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_email)],
@@ -307,3 +329,10 @@ conv_handler = ConversationHandler(
     },
     fallbacks=[CommandHandler("cancel", cancel)],
 )
+
+delete_handler = ConversationHandler(
+    entry_points=[CommandHandler("delete", delete)],
+    states={
+        CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, confirm)]
+    },
+    fallbacks=[CommandHandler("cancel", cancel)]),
