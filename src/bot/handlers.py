@@ -321,7 +321,36 @@ async def check_idle_status(update: Update, context: CallbackContext):
     else:
         await update.message.reply_text(f'IDLE-режим не может подключиться {int(delta // 60)} мин. Попробуйте позже или проверьте /check')
 
+async def change_attachments_status(update: Update, context: CallbackContext):
 
+    user_id = update.message.from_user.id
+
+    try:
+        db = Database()
+        attachment_status = db.check_attachments_status(user_id)
+    except Exception:
+        await update.message.reply_text('Не удалось изменить настройку. Попробуйте позже')
+        return
+
+    if attachment_status is None:
+        await update.message.reply_text('Вы не зарегистрированы')
+        return
+
+    if attachment_status:
+        try:
+            db.change_attachments_status(user_id, 0)
+        except Exception:
+            await update.message.reply_text('Не удалось изменить настройку, попробуйте позже')
+            return
+
+    else:
+        try:
+            db.change_attachments_status(user_id, 1)
+        except Exception:
+            await update.message.reply_text('Не удалось изменить настройку, попробуйте позже')
+            return
+
+    await update.message.reply_text(f'Настройки успешно обновлены! Вложения {'включены' if not attachment_status else 'выключены'}')
 
 """Диалог-хендлер (Conversation-Handler) - собирает воедино все хендлеры
     -обработчики для создания диалога. Точка входа (entry-point) - команда
