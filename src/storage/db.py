@@ -27,7 +27,6 @@ class Database:
         smtp_server: str,
         smtp_port: int,
         created_at: str,
-        last_success: str
     ) -> None:
         """Добавление нового пользователя в таблицу users в БД"""
         users_table_query = "INSERT INTO users (user_id, email, password, imap_server, imap_port, smtp_server, smtp_port, created_at, last_success) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
@@ -43,7 +42,6 @@ class Database:
                     smtp_server,
                     smtp_port,
                     created_at,
-                    last_success
                 ),
             )
 
@@ -82,7 +80,8 @@ class Database:
                     smtp_port INTEGER,
                     created_at TEXT,
                     is_active INTEGER DEFAULT 1
-                    last_success TEXT DEFAULT 0,
+                    last_success,
+                    attachments_enadled INTEGER DEFAULT 1
                 )
             """
             )
@@ -299,3 +298,30 @@ class Database:
             return None
 
         return row[0]
+
+    def change_attachments_status(self, user_id: int, status: int) -> bool:
+        """Обновление значения attachments_enabled для пользователя из таблицы users"""
+        query = 'UPDATE users SET attachments_enabled = ? WHERE user_id = ?'
+        try:
+            cursor = self.cursor.execute(query, (status, user_id))
+            self.conn.commit()
+        except sqlite3.Error:
+            logger.exception('Не удалось изменить attachments_enabled user_id=%s', user_id)
+            self.conn.rollback()
+            raise
+
+        return cursor.rowcount > 0
+
+    def check_attachments_status(self, user_id: int) -> bool | None:
+        query = 'SELECT attachments_enabled FROM users WHERE user_id = ?'
+        try:
+            row = self.cursor.execute(query, (user_id,)).fetchone()
+        except sqlite3.Error:
+            logger.exception('Не удалось узнать статус attachments_enabled user_id=%s', user_id)
+            raise
+
+        if row is None:
+            logger.warning('Пользователь не найден user_id=%s', user_id)
+            return None
+
+        return bool(row[0])
