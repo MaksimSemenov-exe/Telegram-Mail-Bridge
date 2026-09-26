@@ -51,38 +51,38 @@ class MailManager:
                 asyncio.run_coroutine_threadsafe(
                     self.app.bot.send_message(chat_id, text), loop=self.loop
                 )
-
-                for att in msg["attachments"]:
-                    logger.debug(
-                        "Обрабатываю вложение filename=%s, user_id=%s",
-                        att["filename"],
-                        user_id,
-                    )
-                    try:
-                        with open(f'temp/{msg['uid']}_{att['filename']}', "wb") as f:
-                            f.write(att["payload"])
-                        logger.debug("Вложение filename=%s сохранено", att["filename"])
-                    except Exception:
-                        logger.exception(
-                            "Ошибка записи вложения filename=%s, user_id=%s",
+                if db_local.check_attachments_status(user_id):
+                    for att in msg["attachments"]:
+                        logger.debug(
+                            "Обрабатываю вложение filename=%s, user_id=%s",
                             att["filename"],
                             user_id,
                         )
-                        continue
-                    if os.path.getsize(f'temp/{msg["uid"]}_{att["filename"]}') <= 49.5:
-                        asyncio.run_coroutine_threadsafe(
-                            self.app.bot.send_document(chat_id, document=f'temp/{msg['uid']}_{att['filename']}'), self.loop
-                        )
-                        logger.debug("Вложение filename=%s отправлено", att["filename"])
-                    else:
-                        asyncio.run_coroutine_threadsafe(
-                            self.app.bot.send_message(chat_id, 'Не удалось отправить вложение. Его вес превыешает 50 МБ'), loop=self.loop
-                        )
-                        logger.info('Не удалось отправить filename=%s, вес превышет 50 МБ', att["filename"])
-                    try:
-                        os.remove(f'src/temp/{msg["uid"]}_{att.filename}')
-                    except Exception:
-                        logger.info("Ошибка при удалении filename=%s", att["filename"])
+                        try:
+                            with open(f'temp/{msg['uid']}_{att['filename']}', "wb") as f:
+                                f.write(att["payload"])
+                            logger.debug("Вложение filename=%s сохранено", att["filename"])
+                        except Exception:
+                            logger.exception(
+                                "Ошибка записи вложения filename=%s, user_id=%s",
+                                att["filename"],
+                                user_id,
+                            )
+                            continue
+                        if os.path.getsize(f'temp/{msg["uid"]}_{att["filename"]}') <= 49.5:
+                            asyncio.run_coroutine_threadsafe(
+                                self.app.bot.send_document(chat_id, document=f'temp/{msg['uid']}_{att['filename']}'), self.loop
+                            )
+                            logger.debug("Вложение filename=%s отправлено", att["filename"])
+                        else:
+                            asyncio.run_coroutine_threadsafe(
+                                self.app.bot.send_message(chat_id, 'Не удалось отправить вложение. Его вес превыешает 50 МБ'), loop=self.loop
+                            )
+                            logger.info('Не удалось отправить filename=%s, вес превышет 50 МБ', att["filename"])
+                        try:
+                            os.remove(f'src/temp/{msg["uid"]}_{att.filename}')
+                        except Exception:
+                            logger.info("Ошибка при удалении filename=%s", att["filename"])
 
             else:
                 text = f'От: {msg['from']}\nТема: {msg["subject"]}\nТекст: {msg['text']}'
