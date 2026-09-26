@@ -36,6 +36,7 @@ class MailManager:
         logger.info("Запуск IDLE-режима для пользователя user_id=%s", user_id)
 
         def handle_new_message(msg: dict) -> None:
+            MAX_SIZE = int(49.5 * 1024 * 1024)
             db_local = Database()
             logger.info(
                 "Новое письмо uid=%s, from=%s, user=%s (user_id=%s)",
@@ -52,15 +53,41 @@ class MailManager:
                     self.app.bot.send_message(chat_id, text), loop=self.loop
                 )
                 if db_local.check_attachments_status(user_id):
+                    base_dir = os.path.dirname(__file__)
+                    file_dir = os.path.join(base_dir, '..', 'temp')
                     for att in msg["attachments"]:
+                        try:
+                            filename = att.get('filename')
+                        except Exception:
+                            continue
+
+                        safe_name = os.path.basename(filename)
+
+                        path = os.path.join(file_dir, f'{msg['uid']}_{safe_name}')
                         logger.debug(
                             "Обрабатываю вложение filename=%s, user_id=%s",
-                            att["filename"],
+                            filename,
                             user_id,
                         )
+
+                        payload = att.get('payload')
+
+                        if not payload:
+                            logger.warning('Вложение без payload: filename=%s', safe_name)
+                            continue
+
+                        size = len(payload)
+
+                        if size > MAX_SIZE:
+                            size_mb = size / (1024 * 1024)
+                            asyncio.run_coroutine_threadsafe(
+                                self.app.bot.send_message(chat_id, f'Вложение {filename} ({size_mb:.1f} МБ) превышает лимит 50 МБ. Оно не будет отправлено'), loop=self.loop
+                            )
+                            continue
+
                         try:
-                            with open(f'temp/{msg['uid']}_{att['filename']}', "wb") as f:
-                                f.write(att["payload"])
+                            with open(path, "wb") as f:
+                                f.write(payload)
                             logger.debug("Вложение filename=%s сохранено", att["filename"])
                         except Exception:
                             logger.exception(
@@ -69,20 +96,24 @@ class MailManager:
                                 user_id,
                             )
                             continue
-                        if os.path.getsize(f'temp/{msg["uid"]}_{att["filename"]}') <= 49.5:
-                            asyncio.run_coroutine_threadsafe(
-                                self.app.bot.send_document(chat_id, document=f'temp/{msg['uid']}_{att['filename']}'), self.loop
-                            )
-                            logger.debug("Вложение filename=%s отправлено", att["filename"])
-                        else:
-                            asyncio.run_coroutine_threadsafe(
-                                self.app.bot.send_message(chat_id, 'Не удалось отправить вложение. Его вес превыешает 50 МБ'), loop=self.loop
-                            )
-                            logger.info('Не удалось отправить filename=%s, вес превышет 50 МБ', att["filename"])
+
+                        future = asyncio.run_coroutine_threadsafe(
+                            self.app.bot.send_document(chat_id, document=path), self.loop
+                        )
+
                         try:
-                            os.remove(f'src/temp/{msg["uid"]}_{att.filename}')
+                            future.result(10)
+                            logger.debug('Вложение %s отправлено', safe_name)
+                        except TimeoutError:
+                            logger.warning('Таймайт отправки %s, файл оставлен', safe_name)
+                            continue
                         except Exception:
-                            logger.info("Ошибка при удалении filename=%s", att["filename"])
+                            logger.exception('Не удалось отправить вложение %s user_id=%s', safe_name, user_id)
+                        finally:
+                            try:
+                                os.remove(path)
+                            except Exception:
+                                logger.info("Ошибка при удалении filename=%s", att["filename"])
 
             else:
                 text = f'От: {msg['from']}\nТема: {msg["subject"]}\nТекст: {msg['text']}'
