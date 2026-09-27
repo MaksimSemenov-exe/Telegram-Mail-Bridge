@@ -61,6 +61,9 @@ class MailManager:
                         except Exception:
                             continue
 
+                        if not filename:
+                            logger.warning('Вложение без filename user_id=%s', user_id)
+
                         safe_name = os.path.basename(filename)
 
                         path = os.path.join(file_dir, f'{msg['uid']}_{safe_name}')
@@ -246,3 +249,4 @@ class MailManager:
             user_id,
             processed,
         )
+
