@@ -308,7 +308,7 @@ async def check_idle_status(update: Update, context: CallbackContext):
     try:
         last_dt = datetime.strptime(last_success, '%Y-%m-%d %H:%M:%S')
     except (ValueError, TypeError):
-        logger.exception('Неккоретный last_success для user_id=%s %s', update.message.from_user.id ,last_success)
+        logger.exception('Некорретный last_success для user_id=%s %s', update.message.from_user.id ,last_success)
         await update.message.reply_text('Не удалось узнать статус, попробуйте позже')
         return
 
