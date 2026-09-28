@@ -74,7 +74,7 @@ async def get_password(update: Update, context: CallbackContext) -> int:
             "0",
             0,
             str(datetime.now()),
-            "0"
+            True
         )
         logger.info(
             "Пользователь user_id=%s добавлен в БД", user_id
