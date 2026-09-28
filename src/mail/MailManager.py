@@ -4,6 +4,7 @@ import logging
 import os
 from src.mail.imap import MailClient
 from src.storage.db import Database
+from src.services.message_formatter import format_message
 from src.utils.custom_exceptions import UserNotFound
 from src.utils.mask_email import mask_email
 
@@ -48,7 +49,7 @@ class MailManager:
             logger.debug("Отправка письма в Telegram user_id=%s", user_id)
             if len(msg["attachments"]) > 0:
                 logger.info("Получено письмо с %d вложениями", len(msg["attachments"]))
-                text = f'От: {msg['from']}\nТема: {msg["subject"]}\nТекст: {msg['text']}\nВложения будут отправлены ниже'
+                text = format_message(msg, with_attachments=True)
                 asyncio.run_coroutine_threadsafe(
                     self.app.bot.send_message(chat_id, text), loop=self.loop
                 )
@@ -119,7 +120,7 @@ class MailManager:
                                 logger.info("Ошибка при удалении filename=%s", att["filename"])
 
             else:
-                text = f'От: {msg['from']}\nТема: {msg["subject"]}\nТекст: {msg['text']}'
+                text = format_message(msg)
                 asyncio.run_coroutine_threadsafe(
                     self.app.bot.send_message(chat_id, text), self.loop
                 )
@@ -221,7 +222,7 @@ class MailManager:
         processed = 0
 
         for msg in messages:
-            text = f'От: {msg['from']}\nТема: {msg['subject']}\nТекст: {msg['text']}'
+            text = format_message(msg)
             try:
                 asyncio.run_coroutine_threadsafe(
                     self.app.bot.send_message(chat_id, text), self.loop

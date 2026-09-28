@@ -27,9 +27,10 @@ class Database:
         smtp_server: str,
         smtp_port: int,
         created_at: str,
+        attachments_enabled: bool
     ) -> None:
         """Добавление нового пользователя в таблицу users в БД"""
-        users_table_query = "INSERT INTO users (user_id, email, password, imap_server, imap_port, smtp_server, smtp_port, created_at, last_success) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        users_table_query = "INSERT INTO users (user_id, email, password, imap_server, imap_port, smtp_server, smtp_port, created_at, attachments_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
         try:
             self.cursor.execute(
                 users_table_query,
@@ -42,6 +43,7 @@ class Database:
                     smtp_server,
                     smtp_port,
                     created_at,
+                    attachments_enabled
                 ),
             )
 
@@ -79,9 +81,9 @@ class Database:
                     smtp_server TEXT,
                     smtp_port INTEGER,
                     created_at TEXT,
-                    is_active INTEGER DEFAULT 1
-                    last_success,
-                    attachments_enadled INTEGER DEFAULT 1
+                    is_active INTEGER DEFAULT 1,
+                    last_success TEXT,
+                    attachments_enabled INTEGER DEFAULT 1
                 )
             """
             )
