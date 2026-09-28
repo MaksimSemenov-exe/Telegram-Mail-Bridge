@@ -5,6 +5,7 @@ import os
 from src.mail.imap import MailClient
 from src.storage.db import Database
 from src.services.message_formatter import format_message
+from src.integrations.telegram_sender import TelegramSender
 from src.utils.custom_exceptions import UserNotFound
 from src.utils.mask_email import mask_email
 
@@ -18,6 +19,7 @@ class MailManager:
         self.loop = loop
         self.threads = []
         self.db = Database()
+        self.sender = TelegramSender(self.app, self.loop)
 
     def start_idle_for_user(
         self, server: str, username: str, password: str, chat_id: int
@@ -48,11 +50,11 @@ class MailManager:
             )
             logger.debug("Отправка письма в Telegram user_id=%s", user_id)
             if len(msg["attachments"]) > 0:
+
                 logger.info("Получено письмо с %d вложениями", len(msg["attachments"]))
                 text = format_message(msg, with_attachments=True)
-                asyncio.run_coroutine_threadsafe(
-                    self.app.bot.send_message(chat_id, text), loop=self.loop
-                )
+                future = self.sender.send_text(chat_id, text)
+
                 if db_local.check_attachments_status(user_id):
                     base_dir = os.path.dirname(__file__)
                     file_dir = os.path.join(base_dir, '..', 'temp')
@@ -84,9 +86,7 @@ class MailManager:
 
                         if size > MAX_SIZE:
                             size_mb = size / (1024 * 1024)
-                            asyncio.run_coroutine_threadsafe(
-                                self.app.bot.send_message(chat_id, f'Вложение {filename} ({size_mb:.1f} МБ) превышает лимит 50 МБ. Оно не будет отправлено'), loop=self.loop
-                            )
+                            future = self.sender.send_text(chat_id, f'Вложение {filename} ({size_mb:.1f} МБ) превышает лимит 50 МБ. Оно не будет отправлено')
                             continue
 
                         try:
@@ -101,9 +101,7 @@ class MailManager:
                             )
                             continue
 
-                        future = asyncio.run_coroutine_threadsafe(
-                            self.app.bot.send_document(chat_id, document=path), self.loop
-                        )
+                        future = self.sender.send_file(user_id, path)
 
                         try:
                             future.result(10)
@@ -121,9 +119,7 @@ class MailManager:
 
             else:
                 text = format_message(msg)
-                asyncio.run_coroutine_threadsafe(
-                    self.app.bot.send_message(chat_id, text), self.loop
-                )
+                future = self.sender.send_text(chat_id, text)
             try:
                 db_local.update_uid(msg["uid"], username)
                 logger.debug("Uid пользователя %s обновлен на %s", user_id, msg["uid"])
@@ -224,9 +220,7 @@ class MailManager:
         for msg in messages:
             text = format_message(msg)
             try:
-                asyncio.run_coroutine_threadsafe(
-                    self.app.bot.send_message(chat_id, text), self.loop
-                )
+                future = self.sender.send_text(chat_id, text)
                 logger.debug("Отправка письма %s user_id=%s", msg["uid"], user_id)
                 processed += 1
             except Exception:
