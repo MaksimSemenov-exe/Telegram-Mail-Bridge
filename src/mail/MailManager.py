@@ -1,10 +1,10 @@
-import asyncio
 import threading
 import logging
 import os
 from src.mail.imap import MailClient
 from src.storage.db import Database
 from src.services.message_formatter import format_message
+from src.services.attachment_service import AttachmentService
 from src.integrations.telegram_sender import TelegramSender
 from src.utils.custom_exceptions import UserNotFound
 from src.utils.mask_email import mask_email
@@ -15,11 +15,14 @@ logger = logging.getLogger(__name__)
 
 class MailManager:
     def __init__(self, app, loop):
+        base_dir = os.path.dirname(__file__)
+        temp_dir = os.path.join(base_dir, "..", "temp")
         self.app = app
         self.loop = loop
         self.threads = []
         self.db = Database()
         self.sender = TelegramSender(self.app, self.loop)
+        self.attachment_service = AttachmentService(temp_dir)
 
     def start_idle_for_user(
         self, server: str, username: str, password: str, chat_id: int
@@ -39,7 +42,7 @@ class MailManager:
         logger.info("Запуск IDLE-режима для пользователя user_id=%s", user_id)
 
         def handle_new_message(msg: dict) -> None:
-            MAX_SIZE = int(49.5 * 1024 * 1024)
+
             db_local = Database()
             logger.info(
                 "Новое письмо uid=%s, from=%s, user=%s (user_id=%s)",
@@ -53,73 +56,37 @@ class MailManager:
 
                 logger.info("Получено письмо с %d вложениями", len(msg["attachments"]))
                 text = format_message(msg, with_attachments=True)
-                future = self.sender.send_text(chat_id, text)
-
+                future = self.sender.send_text(chat_id, text).result(10)
                 if db_local.check_attachments_status(user_id):
-                    base_dir = os.path.dirname(__file__)
-                    file_dir = os.path.join(base_dir, '..', 'temp')
                     for att in msg["attachments"]:
-                        try:
-                            filename = att.get('filename')
-                        except Exception:
+
+                        result = self.attachment_service.save(att, msg['uid'])
+
+
+                        if result.get('error') == 'too_large':
+                            size_mb = result.get('size') / (1024 * 1024)
+                            self.sender.send_text(chat_id, f'Вложение {result.get('filename')} ({size_mb:.1f} МБ) превышает лимит 50 МБ. Оно не будет отправлено')
+                            continue
+                        if not result.get('path'):
                             continue
 
-                        if not filename:
-                            logger.warning('Вложение без filename user_id=%s', user_id)
-
-                        safe_name = os.path.basename(filename)
-
-                        path = os.path.join(file_dir, f'{msg['uid']}_{safe_name}')
-                        logger.debug(
-                            "Обрабатываю вложение filename=%s, user_id=%s",
-                            filename,
-                            user_id,
-                        )
-
-                        payload = att.get('payload')
-
-                        if not payload:
-                            logger.warning('Вложение без payload: filename=%s', safe_name)
-                            continue
-
-                        size = len(payload)
-
-                        if size > MAX_SIZE:
-                            size_mb = size / (1024 * 1024)
-                            future = self.sender.send_text(chat_id, f'Вложение {filename} ({size_mb:.1f} МБ) превышает лимит 50 МБ. Оно не будет отправлено')
-                            continue
-
-                        try:
-                            with open(path, "wb") as f:
-                                f.write(payload)
-                            logger.debug("Вложение filename=%s сохранено", att["filename"])
-                        except Exception:
-                            logger.exception(
-                                "Ошибка записи вложения filename=%s, user_id=%s",
-                                att["filename"],
-                                user_id,
-                            )
-                            continue
-
-                        future = self.sender.send_file(user_id, path)
+                        path = result.get('path')
+                        future = self.sender.send_file(chat_id, path)
 
                         try:
                             future.result(10)
-                            logger.debug('Вложение %s отправлено', safe_name)
+                            logger.debug('Вложение %s отправлено', result.get('filename'))
                         except TimeoutError:
-                            logger.warning('Таймайт отправки %s, файл оставлен', safe_name)
+                            logger.warning('Таймауйт отправки %s, файл оставлен', result.get('filename'))
                             continue
                         except Exception:
-                            logger.exception('Не удалось отправить вложение %s user_id=%s', safe_name, user_id)
+                            logger.exception('Не удалось отправить вложение %s user_id=%s', result.get('filename'), user_id)
                         finally:
-                            try:
-                                os.remove(path)
-                            except Exception:
-                                logger.info("Ошибка при удалении filename=%s", att["filename"])
+                            self.attachment_service.remove(path)
 
             else:
                 text = format_message(msg)
-                future = self.sender.send_text(chat_id, text)
+                future = self.sender.send_text(chat_id, text).result(10)
             try:
                 db_local.update_uid(msg["uid"], username)
                 logger.debug("Uid пользователя %s обновлен на %s", user_id, msg["uid"])
