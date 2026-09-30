@@ -13,7 +13,7 @@ class Database:
     def __init__(self):
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
         self.db_path = os.path.join(self.current_dir, "mail.db")
-        self.conn = sqlite3.connect(self.db_path)
+        self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
         self.cursor = self.conn.cursor()
         logger.info('Соединение с БД открыто %s', self.db_path)
 

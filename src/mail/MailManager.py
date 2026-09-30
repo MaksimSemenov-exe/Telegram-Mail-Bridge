@@ -3,6 +3,7 @@ import logging
 import os
 from src.mail.imap import MailClient
 from src.storage.db import Database
+from src.services.notification_service import NotificationService
 from src.services.message_formatter import format_message
 from src.services.attachment_service import AttachmentService
 from src.integrations.telegram_sender import TelegramSender
@@ -23,6 +24,7 @@ class MailManager:
         self.db = Database()
         self.sender = TelegramSender(self.app, self.loop)
         self.attachment_service = AttachmentService(temp_dir)
+        self.notification_service = NotificationService(self.sender, self.attachment_service, self.db)
 
     def start_idle_for_user(
         self, server: str, username: str, password: str, chat_id: int
@@ -42,58 +44,7 @@ class MailManager:
         logger.info("Запуск IDLE-режима для пользователя user_id=%s", user_id)
 
         def handle_new_message(msg: dict) -> None:
-
-            db_local = Database()
-            logger.info(
-                "Новое письмо uid=%s, from=%s, user=%s (user_id=%s)",
-                msg["uid"],
-                msg["from"],
-                username,
-                user_id,
-            )
-            logger.debug("Отправка письма в Telegram user_id=%s", user_id)
-            if len(msg["attachments"]) > 0:
-
-                logger.info("Получено письмо с %d вложениями", len(msg["attachments"]))
-                text = format_message(msg, with_attachments=True)
-                future = self.sender.send_text(chat_id, text).result(10)
-                if db_local.check_attachments_status(user_id):
-                    for att in msg["attachments"]:
-
-                        result = self.attachment_service.save(att, msg['uid'])
-
-
-                        if result.get('error') == 'too_large':
-                            size_mb = result.get('size') / (1024 * 1024)
-                            self.sender.send_text(chat_id, f'Вложение {result.get('filename')} ({size_mb:.1f} МБ) превышает лимит 50 МБ. Оно не будет отправлено')
-                            continue
-                        if not result.get('path'):
-                            continue
-
-                        path = result.get('path')
-                        future = self.sender.send_file(chat_id, path)
-
-                        try:
-                            future.result(10)
-                            logger.debug('Вложение %s отправлено', result.get('filename'))
-                        except TimeoutError:
-                            logger.warning('Таймауйт отправки %s, файл оставлен', result.get('filename'))
-                            continue
-                        except Exception:
-                            logger.exception('Не удалось отправить вложение %s user_id=%s', result.get('filename'), user_id)
-                        finally:
-                            self.attachment_service.remove(path)
-
-            else:
-                text = format_message(msg)
-                future = self.sender.send_text(chat_id, text).result(10)
-            try:
-                db_local.update_uid(msg["uid"], username)
-                logger.debug("Uid пользователя %s обновлен на %s", user_id, msg["uid"])
-            except Exception:
-                logger.exception(
-                    "Не удалось обновить UID %s для user=%s", msg["uid"], user_id
-                )
+            self.notification_service.process_message(msg, chat_id, user_id, username)
 
         try:
             client = MailClient(server, username, password)

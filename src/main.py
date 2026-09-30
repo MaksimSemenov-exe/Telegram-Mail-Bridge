@@ -38,7 +38,7 @@ def main():
         raise
     loop = asyncio.get_event_loop()
 
-    app = Application.builder().token(TOKEN).build()
+    app = Application.builder().token(TOKEN).read_timeout(30).write_timeout(30).connect_timeout(10).build()
 
     app.add_handler(registration_handler)
     app.add_handler(delete_handler)
