@@ -1,18 +1,21 @@
+import logging
+
+from src.storage.repositories.mail_repository import MailRepository
+from src.storage.repositories.user_repository import UserRepository
 from src.integrations.telegram_sender import TelegramSender
 from src.services.attachment_service import AttachmentService
-from src.storage.db import Database
 from src.services.message_formatter import format_message
-import logging
 
 
 logger = logging.getLogger(__name__)
 
 
 class NotificationService:
-    def __init__(self, sender: TelegramSender, attachment_service: AttachmentService, database: Database):
+    def __init__(self, sender: TelegramSender, attachment_service: AttachmentService, user_repository: UserRepository, mail_repository: MailRepository):
         self.sender = sender
         self.attachment_service = attachment_service
-        self.database = database
+        self.user_repository = user_repository
+        self.mail_repository = mail_repository
 
     def process_message(self, msg: dict, chat_id: int, user_id: int, username: str) -> None:
         logger.info('Новое письмо: uid: %s user_id: %s', msg['uid'], user_id)
@@ -21,9 +24,9 @@ class NotificationService:
             logger.debug("Получено письмо с %d вложениями", len(msg['attachments']))
             text = format_message(msg, with_attachments=True)
             logger.info("Длина текста письма uid=%s: %d символов", msg["uid"], len(text))
-            self.sender.send_text(chat_id, text).result(10)
+            self.sender.send_text(chat_id, text).result(30)
 
-            if self.database.check_attachments_status(user_id):
+            if self.user_repository.check_attachments_status(user_id):
                 for att in msg['attachments']:
                     result = self.attachment_service.save(att, msg['uid'])
                     if result.get('error') == 'too_large':
@@ -51,9 +54,9 @@ class NotificationService:
         else:
             text = format_message(msg)
             logger.info("Длина текста письма uid=%s: %d символов", msg["uid"], len(text))
-            self.sender.send_text(chat_id, text).result(10)
+            self.sender.send_text(chat_id, text).result(30)
         try:
-            self.database.update_uid(msg['uid'], username)
+            self.mail_repository.update_uid(msg['uid'], username)
             logger.debug('UID пользователя %s обновлен на %s', user_id, msg['uid'])
         except Exception:
             logger.exception(
