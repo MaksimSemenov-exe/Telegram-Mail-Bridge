@@ -1,8 +1,10 @@
 import threading
 import logging
 import os
+
+from src.storage.repositories.mail_repository import MailRepository
+from src.storage.repositories.user_repository import UserRepository
 from src.mail.imap import MailClient
-from src.storage.db import Database
 from src.services.notification_service import NotificationService
 from src.services.message_formatter import format_message
 from src.services.attachment_service import AttachmentService
@@ -15,23 +17,23 @@ logger = logging.getLogger(__name__)
 
 
 class MailManager:
-    def __init__(self, app, loop):
+    def __init__(self, app, loop, user_repository: UserRepository, mail_repository: MailRepository):
         base_dir = os.path.dirname(__file__)
         temp_dir = os.path.join(base_dir, "..", "temp")
         self.app = app
         self.loop = loop
         self.threads = []
-        self.db = Database()
+        self.user_repository = user_repository
+        self.mail_repository = mail_repository
         self.sender = TelegramSender(self.app, self.loop)
         self.attachment_service = AttachmentService(temp_dir)
-        self.notification_service = NotificationService(self.sender, self.attachment_service, self.db)
+        self.notification_service = NotificationService(self.sender, self.attachment_service, self.user_repository, self.mail_repository)
 
     def start_idle_for_user(
         self, server: str, username: str, password: str, chat_id: int
     ) -> None:
         try:
-            db = Database()
-            user_id = db.get_user_id_by_email(username)
+            user_id = self.user_repository.get_user_id_by_email(username)
         except UserNotFound:
             logger.warning(
                 "IDLE не запущен: Пользователь не найден user=%s", mask_email(username)
@@ -47,7 +49,7 @@ class MailManager:
             self.notification_service.process_message(msg, chat_id, user_id, username)
 
         try:
-            client = MailClient(server, username, password)
+            client = MailClient(server, username, password, user_id, self.user_repository)
             if not client.connect():
                 logger.warning(
                     "Не удалось подключиться к IMAP user=%s", mask_email(username)
@@ -61,7 +63,7 @@ class MailManager:
 
     def start_idle_for_all_users(self) -> None:
         """Запускает IDLE-поток для каждого пользователя"""
-        users = self.db.get_all_users()
+        users = self.user_repository.get_all_users()
         logger.info("Запуск IDLE-режима для %s пользователей", len(users))
 
         if len(users) == 0:
@@ -103,7 +105,7 @@ class MailManager:
         self, server: str, username: str, password: str, chat_id: int
     ) -> None:
         try:
-            user_id = self.db.get_user_id_by_email(username)
+            user_id = self.user_repository.get_user_id_by_email(username)
         except UserNotFound:
             logger.warning(
                 "Ручная проверка не запущена: Пользователь не найден user=%s",
@@ -116,7 +118,7 @@ class MailManager:
             )
             return
         try:
-            client = MailClient(server, username, password)
+            client = MailClient(server, username, password, self.user_repository)
             if not client.connect():
                 logger.warning(
                     "Ручная проверка: Не удалось подключиться к IMAP user=%s",
@@ -132,7 +134,6 @@ class MailManager:
 
         logger.info("Найдено писем %d (user_id=%s)", len(messages), user_id)
 
-        db_local = Database()
         processed = 0
 
         for msg in messages:
@@ -149,7 +150,7 @@ class MailManager:
                 )
                 continue
             try:
-                db_local.update_uid(msg["uid"], username)
+                self.mail_repository.update_uid(msg["uid"], username)
                 logger.debug("UID %s обработан и занесене в БД", msg["uid"])
             except Exception:
                 logger.exception(
