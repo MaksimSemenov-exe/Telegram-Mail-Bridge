@@ -2,30 +2,32 @@ import time
 import logging
 from imap_tools import MailBox, A
 from src.storage.db import Database
-from src.utils.custom_exceptions import UserNotFound
+from src.storage.repositories.user_repository import UserRepository
 from src.utils.mask_email import mask_email
 
 logger = logging.getLogger(__name__)
 
 
 class MailClient:
-    def __init__(self, server: str, username: str, password: str):
+    def __init__(self, server: str, username: str, password: str, user_id: int, user_repository: UserRepository):
+        self.user_repository = user_repository
         self.server = server
         self.username = username
         self.password = password
         self.mailbox = None
         self.responses = None
+        self.user_id = user_id
 
-        try:
-            self.user_id = Database().get_user_id_by_email(self.username)
-        except UserNotFound:
-            logger.warning("Пользователь не найден user=%s", mask_email(self.username))
-            raise
-        except Exception:
-            logger.exception(
-                "Ошибка БД при получении user=%s", mask_email(self.username)
-            )
-            raise
+        # try:
+        #     self.user_id = Database().get_user_id_by_email(self.username)
+        # except UserNotFound:
+        #     logger.warning("Пользователь не найден user=%s", mask_email(self.username))
+        #     raise
+        # except Exception:
+        #     logger.exception(
+        #         "Ошибка БД при получении user=%s", mask_email(self.username)
+        #     )
+        #     raise
 
     def connect(self) -> bool:
         """Подключение к почтовому серверу"""
@@ -78,7 +80,7 @@ class MailClient:
 
         while True:
             try:
-                is_active = db.is_active(self.user_id)
+                is_active = self.user_repository.is_active(self.user_id)
             except Exception:
                 logger.exception(
                     "Ошибка проверки is_active user_id=%s, повтор через 5 секунд",
@@ -121,7 +123,7 @@ class MailClient:
                 continue
 
             try:
-                db.update_last_success(self.user_id)
+                self.user_repository.update_last_success(self.user_id)
             except Exception:
                 logger.debug("last_success не обновлён user_id=%s, детали в db.py", self.user_id)
 
