@@ -1,6 +1,5 @@
 import logging
 from datetime import datetime
-from src.storage.db import Database
 from src.utils.get_user_server import get_user_server
 from src.utils.get_user_port import get_user_port
 from src.utils.mask_email import mask_email
@@ -13,7 +12,6 @@ from telegram.ext import (
     filters,
 )
 
-database = Database()
 EMAIL, PASSWORD = range(2)
 CONFIRMATION = range(1)
 
@@ -25,9 +23,7 @@ async def start(update: Update, context: CallbackContext) -> int:
     user_id = update.message.from_user.id
     logger.info("Команда /start от user_id=%s", user_id)
 
-    db = Database()
-
-    if db.is_registered(user_id):
+    if context.bot_data.get('user_repository').is_registered(user_id):
         await update.message.reply_text("Вы уже зарегистрированы")
         logger.info("user_id=%s уже зарегистрирован", user_id)
         return ConversationHandler.END
@@ -65,7 +61,7 @@ async def get_password(update: Update, context: CallbackContext) -> int:
     imap_server = get_user_server(context.user_data[EMAIL])
     imap_port = get_user_port(context.user_data[EMAIL])
     try:
-        database.add_user(
+        context.bot_data.get('user_repository').add_user(
             user_id,
             context.user_data[EMAIL],
             context.user_data[PASSWORD],
@@ -126,8 +122,7 @@ async def settings(update: Update, context: CallbackContext):
 
     logger.info("Запрос настроек user_id=%s", update.message.from_user.id)
     try:
-        db = Database()
-        user_info = db.get_user_info(update.message.from_user.id)
+        user_info = context.bot_data.get('user_repository').get_user_info(update.message.from_user.id)
     except Exception:
         await update.message.reply_text(
             "Не удалось получить настройки, попробуйте позже"
@@ -150,9 +145,8 @@ async def settings(update: Update, context: CallbackContext):
 async def stop_idle(update: Update, context: CallbackContext):
     """Хендлер-обработчки команды /stop_idle для остановки работы IDLE-режмима"""
     logger.info("Запрос остановки IDLE-режима user_id=%s", update.message.from_user.id) # Добавить try/except
-    db = Database()
     try:
-        result = db.stop_idle(update.message.from_user.id)
+        result = context.bot_data.get('user_repository').stop_idle(update.message.from_user.id)
     except Exception:
         await update.message.reply_text('Не удалось остановить IDLE, попробуйте позже')
         return
@@ -172,8 +166,7 @@ async def manual_check(update: Update, context: CallbackContext):
     """Хендлер-обработчик для команды /check (ручная проверка почты)"""
     user_id = update.message.from_user.id
     try:
-        db = Database()
-        user_info = db.get_user_info(user_id)
+        user_info = context.bot_data.get('user_repository').get_user_info(user_id)
     except Exception:
         await update.message.reply_text('Не удалось получить данные, попробуйте позже')
         return
@@ -184,6 +177,7 @@ async def manual_check(update: Update, context: CallbackContext):
         return
 
     mail_manager = context.bot_data.get("mail_manager")
+
     try:
         logger.info("Ручная проверка почты user_id=%s", user_id)
         mail_manager.manual_check(
@@ -213,8 +207,7 @@ async def start_idle(update: Update, context: CallbackContext):
         return
 
     try:
-        db = Database()
-        user_info = db.get_user_info(user_id)
+        user_info = context.bot_data.get('user_repository').get_user_info(user_id)
     except Exception:
         logger.exception('Не удалось получить данные user_id=%s', user_id)
         await update.message.reply_text('Не удалось получить данные, попробуйте позже')
@@ -226,7 +219,7 @@ async def start_idle(update: Update, context: CallbackContext):
         return
 
     try:
-        db.set_active(user_id, 1)
+        context.bot_data.get('user_repository').set_active(user_id, 1)
     except Exception:
         await update.message.reply_text('Не удалось возобновить IDLE-режим. Попробуйт позже')
         return
@@ -257,8 +250,7 @@ async def confirm(update: Update, context: CallbackContext):
 
     if confirmation == 'Y':
         try:
-            db = Database()
-            is_success = db.delete_user(update.message.from_user.id)
+            is_success = context.bot_data.get('user_repository').delete_user(update.message.from_user.id)
         except Exception:
             await update.message.reply_text('Не удалось удалить аккаунт, попробуйте позже')
             return ConversationHandler.END
@@ -281,8 +273,7 @@ async def confirm(update: Update, context: CallbackContext):
 async def check_idle_status(update: Update, context: CallbackContext):
 
     try:
-        db = Database()
-        activity = db.is_active(update.message.from_user.id)
+        activity = context.bot_data.get('user_repository').is_active(update.message.from_user.id)
     except Exception:
         await update.message.reply_text('Не удалось узнать статус IDLE-режима, попробуйте позже')
         return
@@ -296,7 +287,7 @@ async def check_idle_status(update: Update, context: CallbackContext):
         return
 
     try:
-        last_success = db.get_last_success(update.message.from_user.id)
+        last_success = context.bot_data.get('user_repository').get_last_success(update.message.from_user.id)
     except Exception:
         await update.message.reply_text('Не удалось узнать статус, попробуйте позже')
         return
@@ -326,8 +317,7 @@ async def change_attachments_status(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
 
     try:
-        db = Database()
-        attachment_status = db.check_attachments_status(user_id)
+        attachment_status = context.bot_data.get('user_repository').check_attachments_status(user_id)
     except Exception:
         await update.message.reply_text('Не удалось изменить настройку. Попробуйте позже')
         return
@@ -338,14 +328,14 @@ async def change_attachments_status(update: Update, context: CallbackContext):
 
     if attachment_status:
         try:
-            db.change_attachments_status(user_id, 0)
+            context.bot_data.get('user_repository').change_attachments_status(user_id, 0)
         except Exception:
             await update.message.reply_text('Не удалось изменить настройку, попробуйте позже')
             return
 
     else:
         try:
-            db.change_attachments_status(user_id, 1)
+            context.bot_data.get('user_repository').change_attachments_status(user_id, 1)
         except Exception:
             await update.message.reply_text('Не удалось изменить настройку, попробуйте позже')
             return
